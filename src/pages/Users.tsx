@@ -8,14 +8,13 @@ export default function Users() {
     const { isDarkMode } = useDarkMode();
     const [users] = useState(mock.users);
 
-    const openViewModal = (row: any) => {}
     const openEditModal = (row: any) => {}
     const confirmDelete = (row: any) => {}
 
     return (
       <div className="container mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+          <h1 className={`text-xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
             Médicos
           </h1>
         </div>
@@ -43,11 +42,6 @@ export default function Users() {
                   }
               ]}
               actions={[
-                {
-                    label: 'Visualizar',
-                    icon: <EyeIcon className="h-4 w-4" />,
-                    action: (row) => openViewModal(row)
-                },
                 {
                     label: 'Editar',
                     icon: <PencilIcon className="h-4 w-4" />,

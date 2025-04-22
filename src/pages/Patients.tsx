@@ -15,7 +15,7 @@ export default function Patients() {
     return (
         <div className="container mx-auto">
             <div className="flex justify-between items-center mb-4">
-                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                <h1 className={`text-xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     Pacientes
                 </h1>
             </div>
@@ -44,7 +44,7 @@ export default function Patients() {
                     ]}
                     actions={[
                         {
-                            label: 'Visualizar',
+                            label: 'Consulta',
                             icon: <EyeIcon className="h-4 w-4" />,
                             action: (row) => openViewModal(row)
                         },

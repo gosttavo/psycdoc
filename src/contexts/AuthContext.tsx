@@ -16,6 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const login = (userData: any) => {
+        console.log('Login data:', userData);
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
     };
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const isAuthenticated = !!user;
+    console.log('Login data:', isAuthenticated);
 
     return (
         <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
