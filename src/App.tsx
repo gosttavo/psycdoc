@@ -5,6 +5,7 @@ import { DarkModeProvider } from './hooks/useDarkMode';
 import RootLayout from './layout/RootLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ToastProvider } from './contexts/ToastContext';
 
 const Home = React.lazy(() => import('./pages/Home'));
 const Users = React.lazy(() => import('./pages/Users'));
@@ -20,19 +21,21 @@ const App: React.FC = () => {
       <AuthProvider>
         <Suspense fallback={<LoadingSpinner />}>
           <DarkModeProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<RootLayout />}>
-                  <Route index element={<Home />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/patients" element={<Patients />} />
-                  <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
-                  <Route path="/settings" element={<Settings />} />
+          <ToastProvider>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<RootLayout />}>
+                    <Route index element={<Home />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/patients" element={<Patients />} />
+                    <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
+                    <Route path="/settings" element={<Settings />} />
+                  </Route>
                 </Route>
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ToastProvider>
           </DarkModeProvider>
         </Suspense>
       </AuthProvider>

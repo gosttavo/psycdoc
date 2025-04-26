@@ -36,13 +36,13 @@ export default function Sidebar({ isDarkMode }: SidebarProps) {
                             key={item.name}
                             to={item.href}
                             className={({ isActive }) =>
-                                `group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors w-full ${
+                                `group flex items-center px-2 py-2 text-md font-medium rounded-md transition-colors w-full ${
                                     isActive
                                         ? isDarkMode
-                                            ? 'bg-gray-700 text-white'
+                                            ? 'bg-gray-700 text-blue-400'
                                             : 'bg-blue-100 text-blue-800'
                                         : isDarkMode
-                                            ? 'text-white hover:bg-gray-700 hover:text-white'
+                                            ? 'text-blue-400 hover:bg-gray-700 hover:text-white'
                                             : 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
                                 } ${isCollapsed ? 'justify-center' : 'justify-start'}`
                             }
@@ -59,13 +59,13 @@ export default function Sidebar({ isDarkMode }: SidebarProps) {
                     <NavLink
                         to="/settings"
                         className={({ isActive }) =>
-                            `group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors w-full ${
+                            `group flex items-center px-2 py-2 text-md font-medium rounded-md transition-colors w-full ${
                                 isActive
                                     ? isDarkMode
-                                        ? 'bg-gray-700 text-white'
+                                        ? 'bg-gray-700 text-blue-400'
                                         : 'bg-blue-100 text-blue-800'
                                     : isDarkMode
-                                        ? 'text-white hover:bg-gray-700 hover:text-white'
+                                        ? 'text-blue-400 hover:bg-gray-700 hover:text-white'
                                         : 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
                             } ${isCollapsed ? 'justify-center' : 'justify-start'}`
                         }

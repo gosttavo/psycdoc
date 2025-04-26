@@ -2,6 +2,7 @@ import { GenericForm } from "../components/Form";
 import { formFields, formLoginSchema, FormLoginSchema } from "../schemas/formLoginSchema";
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Alert } from "@mui/material";
 
 export default function Login() {
     const { login } = useAuth();
@@ -13,6 +14,7 @@ export default function Login() {
             login(data);
             navigate('/');
         } catch (error) {
+            <Alert severity="error">E-mail ou senha inválidos.</Alert>
             console.error('Login failed:', error);
         }
     };
