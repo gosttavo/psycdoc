@@ -12,19 +12,16 @@ export default class AuthService {
       headers: { "Content-Type": "application/x-www-form-urlencoded" }
     });
 
-    console.log("Login response:", response.data);
-    return response.data;
+    return response
   };
 
   public static getUser = async (id: number) => {
     const response = await request({
-      url: AuthEndpoints.me(),
-      method: "POST",
-      data: qs.stringify({ id }),
+      url: `${AuthEndpoints.me()}?id=${id}`,
+      method: "GET",
       headers: { "Content-Type": "application/x-www-form-urlencoded" }
     });
 
-    console.log("Get user response:", response.data);
-    return response.data;
+    return response;
   };
 }

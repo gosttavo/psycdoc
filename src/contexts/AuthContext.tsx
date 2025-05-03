@@ -6,15 +6,13 @@ import {
     useEffect,
 } from "react";
 import { User } from "../interfaces/User";
-import { useGetLoggedUser } from "../hooks/useLogin";
 import { useNavigate } from "react-router";
+import AuthService from "../api/services/AuthService/service";
+import { AuthLoginResponse } from "../interfaces/Auth";
   
 interface AuthContextType {
     user: User | null;
-    login: (userData: {
-        isLoggedIn: boolean;
-        userId: number;
-    }) => void;
+    login: (userData: AuthLoginResponse) => void;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -22,7 +20,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const { mutateAsync } = useGetLoggedUser();
     const navigate = useNavigate();
 
     const [user, setUser] = useState<User | null>(() => {
@@ -30,20 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
-    const login = async (userData: {
-        isLoggedIn: boolean,
-        userId: number
-    }) => {
-        const user: Promise<User> = mutateAsync(userData.userId)
-
-        if (!user) {
-            console.error("User not found");
+    const login = async (userData: AuthLoginResponse) => {
+        try {
+            const user = await AuthService.getUser(userData.userId);
+            setUser(user);
+            localStorage.setItem("user", JSON.stringify(user));
+            navigate('/');
+        } catch (err) {
+            console.error("Failed to fetch user", err);
             logout();
-            return;
         }
-        
-        setUser(await user);
-        localStorage.setItem("user", JSON.stringify(userData));
     };
 
     const logout = () => {

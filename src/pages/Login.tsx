@@ -1,28 +1,27 @@
 import { GenericForm } from "../components/Form";
 import { formFields, formLoginSchema, FormLoginSchema } from "../schemas/formLoginSchema";
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { useLogin } from "../hooks/useLogin";
 import { useToast } from "../contexts/ToastContext";
 
 export default function Login() {
     const { login: loginToContext } = useAuth();
     const { mutateAsync } = useLogin();
-    const navigate = useNavigate();
     const { showToast } = useToast();
     
     const handleSubmit = async (data: FormLoginSchema) => {
         try {
             const result = await mutateAsync(data);
+
             if (result?.success) {
-                loginToContext({ isLoggedIn: true, userId: result.userId });
-                navigate('/');
+                loginToContext({ success: result.success, userId: result.id });
             } else {
+                showToast("Credenciais inválidas!", "error");
                 throw new Error("Login inválido");
             }
         } catch (err: string | any) {
-            console.error("Erro de login:", err);
-            showToast("Credenciais inválidas", "error");
+            showToast("Erro ao realizar login, contate o suporte.", "error");
+            throw new Error("Login inválido");
         }
     };
 
