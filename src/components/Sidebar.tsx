@@ -9,7 +9,7 @@ interface SidebarProps {
 export default function Sidebar({ isDarkMode }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const navigation = [
-        { name: 'Dashboard', href: '/', icon: <ChartBarIcon className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} /> },
+        { name: 'Consultas', href: '/', icon: <ChartBarIcon className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} /> },
         { name: 'Pacientes', href: '/patients', icon: <UsersIcon className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} /> },
         { name: 'Médicos', href: '/users', icon: <UserIcon className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} /> },
     ];

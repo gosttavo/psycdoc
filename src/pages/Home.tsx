@@ -2,17 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import moment from "moment";
 import mock from "../database/mock.json";
-//import { useAuth } from "../contexts/AuthContext";
 import { useDarkMode } from "../hooks/useDarkMode";
 import {
-    Box,
     Button,
     ClickAwayListener,
-    Fade,
     Grow,
     MenuItem,
     MenuList,
-    Modal,
     Paper,
     Popper,
     Table,
@@ -21,13 +17,11 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography,
-    Backdrop
+    Typography
 } from "@mui/material";
 import {
     EllipsisVerticalIcon,
     ChevronDoubleRightIcon,
-    MagnifyingGlassIcon,
     PencilIcon,
     PlusIcon,
     XMarkIcon
@@ -36,47 +30,35 @@ import { useForm } from "react-hook-form";
 import { formInitEncounterSchema, FormInitEncounterSchema } from "../schemas/formEncounterSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClinicalEncounter } from "../interfaces/ClinicalEncounter";
+import FormSearch from "../components/FormSearch";
+import ModalWrapper from "../components/Modal";
 
 interface ModalAction {
     row: ClinicalEncounter;
-    type: 'edit' | 'consult' | 'delete';
+    type: 'create' | 'edit' | 'consult' | 'delete';
 }
-
-const modalStyle = {
-    position: 'absolute' as 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    boxShadow: 24,
-    p: 4,
-    borderRadius: '8px',
-};
 
 export default function Home() {
     const [clinicalEncounters] = useState<ClinicalEncounter[]>(mock.clinicalEncounters);
-
     const navigate = useNavigate();
-    //const { user } = useAuth();
     const { isDarkMode } = useDarkMode();
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
     const [selectedRow, setSelectedRow] = useState<ClinicalEncounter | null>(null);
-
-    const [openEditModal, setOpenEditModal] = useState(false);
+    const [openFormModal, setOpenFormModal] = useState(false);
+    const [formModalType, setFormModalType] = useState<'create' | 'edit'>('create');
     const [openEncounterModal, setOpenEncounterModal] = useState(false);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    // #region Form Handling
-
-    const { reset, handleSubmit, register } = useForm<FormInitEncounterSchema>({
+    const {
+        reset: encounterReset,
+        handleSubmit: encounterSubmit,
+        register: encounterRegister
+    } = useForm<FormInitEncounterSchema>({
         resolver: zodResolver(formInitEncounterSchema)
     })
 
-    // #endregion
-
     // #region Dropdown Menu
-
     const prevOpen = useRef(openMenuIndex !== null);
 
     const handleToggle = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
@@ -95,17 +77,24 @@ export default function Home() {
             setOpenMenuIndex(null);
         }
     };
-
     // #endregion
 
     // #region Modal Handlers
-
-    const openModal = (row: ClinicalEncounter, type: ModalAction['type']) => {
+    const openModal = (type: ModalAction['type'], row?: ClinicalEncounter) => {
         handleClose();
-        setSelectedRow(row);
+
+        if (row) {
+            setSelectedRow(row);
+        }
+
         switch (type) {
+            case 'create':
+                setOpenFormModal(true);
+                setFormModalType('create');
+                break;
             case 'edit':
-                setOpenEditModal(true);
+                setOpenFormModal(true);
+                setFormModalType('edit');
                 break;
             case 'consult':
                 setOpenEncounterModal(true);
@@ -117,7 +106,6 @@ export default function Home() {
                 break;
         }
     };
-
     // #endregion
 
     useEffect(() => {
@@ -129,12 +117,12 @@ export default function Home() {
 
     useEffect(() => {
         if (selectedRow) {
-            reset({
+            encounterReset({
                 patient: selectedRow.patientId ?? 0,
                 status: 2,
             });
         }
-    }, [selectedRow, reset]);
+    }, [selectedRow, encounterReset]);
 
     return (
         <div className="container mx-auto">
@@ -143,32 +131,17 @@ export default function Home() {
                     Próximas consultas
                 </h1>
                 <div className="flex justify-end">
-                    <Button variant="contained">
+                    <Button variant="contained" onClick={() => openModal('create')}>
                         <PlusIcon className="h-5 w-5 mr-2" />
                         Nova Consulta
                     </Button>
                 </div>
             </div>
 
-            <div className="flex flex-col mb-4">
-                <form className={`flex items-center gap-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <input
-                        type="text"
-                        placeholder="Pesquisar por paciente, profissional, data..."
-                        className={`flex-1 p-2 rounded-md ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black'}`}
-                    />
-                    <Button
-                        variant="outlined"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            // Implementar search aqui
-                        }}
-                    >
-                        <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
-                        Pesquisar
-                    </Button>
-                </form>
-            </div>
+            <FormSearch
+                onSubmit={(data) => console.log("Pesquisar", data)}
+                placeholder="Pesquisar por paciente, profissional, data..."
+            />
 
             <div className={`flex justify-between items-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <TableContainer component="div">
@@ -193,11 +166,7 @@ export default function Home() {
 
                         <TableBody>
                             {clinicalEncounters.map((row, index) => (
-                                <TableRow
-                                    hover
-                                    role="checkbox"
-                                    tabIndex={-1}
-                                    key={index}
+                                <TableRow hover role="checkbox" tabIndex={-1} key={index}
                                     sx={{
                                         backgroundColor: isDarkMode ? '#1e2939' : 'white',
                                         '&:hover': {
@@ -255,13 +224,13 @@ export default function Home() {
                                                     >
                                                         <ClickAwayListener onClickAway={handleClose}>
                                                             <MenuList id="composition-menu" aria-labelledby="composition-button" onKeyDown={handleListKeyDown}>
-                                                                <MenuItem onClick={() => openModal(row, 'consult')}>
+                                                                <MenuItem onClick={() => openModal('consult', row)}>
                                                                     <ChevronDoubleRightIcon className="h-4 w-4 mr-2" /> Consultar
                                                                 </MenuItem>
-                                                                <MenuItem onClick={() => openModal(row, 'edit')}>
+                                                                <MenuItem onClick={() => openModal('edit', row)}>
                                                                     <PencilIcon className="h-4 w-4 mr-2" /> Editar
                                                                 </MenuItem>
-                                                                <MenuItem onClick={() => openModal(row, 'delete')}>
+                                                                <MenuItem onClick={() => openModal('delete', row)}>
                                                                     <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
                                                                 </MenuItem>
                                                             </MenuList>
@@ -278,97 +247,77 @@ export default function Home() {
                 </TableContainer>
             </div>
 
-            {/* Modais */}
-            <Modal
+            {/* Modal de Iniciar Consulta */}
+            <ModalWrapper
                 open={openEncounterModal}
                 onClose={() => setOpenEncounterModal(false)}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{ backdrop: { timeout: 500 } }}
+                title={`Iniciar a consulta de ${selectedRow?.patient?.name}?`}
             >
-                <Fade in={openEncounterModal}>
-                    <Box 
-                        sx={modalStyle}
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
-                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
-                        }}
-                    >
-                        <form onSubmit={handleSubmit((data) => {
-                            console.log("Iniciar consulta", selectedRow?.id, data);
-                            navigate(`/${selectedRow?.id}/clinicalEncounter`);
-                        })}>
-                            <input
-                                type="hidden"
-                                {...register('patient')}
-                                value={selectedRow?.patientId ?? 0}
-                            />
-                            <input
-                                type="hidden"
-                                {...register('status')}
-                                value={2}
-                            />
-                            {/* Se quiser mostrar também, pode renderizar */}
-                            <Typography variant="h6" component="h2">{`Iniciar a consulta de ${selectedRow?.patient?.name}?`}</Typography>
-                            <Typography sx={{ mt: 2 }}>Você será redirecionado para outra página.</Typography>
+                <form onSubmit={encounterSubmit((data) => {
+                    console.log("Iniciar consulta", selectedRow?.id, data);
+                    navigate(`/${selectedRow?.id}/clinicalEncounter`);
+                })}>
+                    <input
+                        type="hidden"
+                        {...encounterRegister('patient')}
+                        value={selectedRow?.patientId ?? 0}
+                    />
+                    <input
+                        type="hidden"
+                        {...encounterRegister('status')}
+                        value={2}
+                    />
+                    <Typography sx={{ mt: 2 }}>Você será redirecionado para outra página.</Typography>
 
-                            <div className="mt-4 flex justify-end gap-4">
-                                <Button variant="outlined" type="reset" onClick={() => {
-                                    setOpenEncounterModal(false);
-                                    reset()
-                                }}>
-                                    Cancelar
-                                </Button>
-                                <Button variant="contained" type="submit">
-                                    Iniciar
-                                </Button>
-                            </div>
-                        </form>
-                    </Box>
-                </Fade>
-            </Modal>
+                    <div className="mt-4 flex justify-end gap-4">
+                        <Button variant="outlined" type="reset" onClick={() => {
+                            setOpenEncounterModal(false);
+                            encounterReset()
+                        }}>
+                            Cancelar
+                        </Button>
+                        <Button variant="contained" type="submit">
+                            Iniciar
+                        </Button>
+                    </div>
+                </form>
+            </ModalWrapper>
 
-            <Modal
-                open={openEditModal}
-                onClose={() => setOpenEditModal(false)}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{ backdrop: { timeout: 500 } }}
+            {/* Modal de Formulário (Criar/Editar) */}
+            <ModalWrapper
+                open={openFormModal}
+                onClose={() => setOpenFormModal(false)}
+                title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Consulta`}
+                width={600}
             >
-                <Fade in={openEditModal}>
-                    <Box 
-                        sx={modalStyle}
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
-                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
-                        }}
-                    >
-                        <Typography variant="h6" component="h2">Editar Consulta</Typography>
-                        <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
-                    </Box>
-                </Fade>
-            </Modal>
+                <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
+                <div className="mt-4 flex justify-end gap-4">
+                    <Button variant="outlined" onClick={() => setOpenFormModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="contained">
+                        {formModalType === 'create' ? 'Criar' : 'Salvar'}
+                    </Button>
+                </div>
+            </ModalWrapper>
 
-            <Modal
+            {/* Modal de Cancelamento */}
+            <ModalWrapper
                 open={openDeleteModal}
                 onClose={() => setOpenDeleteModal(false)}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{ backdrop: { timeout: 500 } }}
+                title="Cancelar Consulta"
+                width={400}
             >
-                <Fade in={openDeleteModal}>
-                    <Box 
-                        sx={modalStyle}
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
-                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
-                        }}
-                    >
-                        <Typography variant="h6" component="h2">Cancelar Consulta</Typography>
-                        <Typography sx={{ mt: 2 }}>Deseja realmente cancelar?</Typography>
-                    </Box>
-                </Fade>
-            </Modal>
+                <Typography sx={{ mt: 2 }}>Deseja realmente cancelar a consulta?</Typography>
+                <div className="mt-4 flex justify-end gap-4">
+                    <Button variant="outlined" onClick={() => setOpenDeleteModal(false)}>
+                        Não
+                    </Button>
+                    <Button variant="contained" color="error">
+                        Sim, cancelar
+                    </Button>
+                </div>
+            </ModalWrapper>
         </div>
     );
 }

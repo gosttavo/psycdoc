@@ -2,10 +2,12 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DarkModeProvider } from './hooks/useDarkMode';
+import { ToastProvider } from './contexts/ToastContext';
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './api/queryClient';
 import RootLayout from './layout/RootLayout';
 import LoadingSpinner from './components/LoadingSpinner';
 import ProtectedRoute from './components/ProtectedRoute';
-import { ToastProvider } from './contexts/ToastContext';
 
 const Home = React.lazy(() => import('./pages/Home'));
 const Users = React.lazy(() => import('./pages/Users'));
@@ -18,27 +20,29 @@ const ClinicalEncounter = React.lazy(() => import('./pages/ClinicalEncouter'));
 const App: React.FC = () => {
   return (
     <Router>
-      <AuthProvider>
-        <Suspense fallback={<LoadingSpinner />}>
-          <DarkModeProvider>
-          <ToastProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<RootLayout />}>
-                    <Route index element={<Home />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/patients" element={<Patients />} />
-                    <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
-                    <Route path="/settings" element={<Settings />} />
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Suspense fallback={<LoadingSpinner />}>
+            <DarkModeProvider>
+            <ToastProvider>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={<RootLayout />}>
+                      <Route index element={<Home />} />
+                      <Route path="/users" element={<Users />} />
+                      <Route path="/patients" element={<Patients />} />
+                      <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Route>
                   </Route>
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </ToastProvider>
-          </DarkModeProvider>
-        </Suspense>
-      </AuthProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ToastProvider>
+            </DarkModeProvider>
+          </Suspense>
+        </AuthProvider>
+      </QueryClientProvider>
     </Router>
   );
 };
