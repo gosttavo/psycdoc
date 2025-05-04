@@ -1,46 +1,60 @@
 import { useEffect, useRef, useState } from "react";
+import moment from "moment";
+import mock from "../database/mock.json";
 import { useDarkMode } from "../hooks/useDarkMode";
-import mock from "../database/mock.json"
+import {
+    Button,
+    ClickAwayListener,
+    Grow,
+    MenuItem,
+    MenuList,
+    Paper,
+    Popper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
+} from "@mui/material";
+import {
+    EllipsisVerticalIcon,
+    PencilIcon,
+    PlusIcon,
+    XMarkIcon
+} from "@heroicons/react/24/outline";
+import { useForm } from "react-hook-form";
+import { formPatientSchema, FormPatientSchema } from "../schemas/formPatientSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Patient } from "../interfaces/Patient";
+import FormSearch from "../components/FormSearch";
+import ModalWrapper from "../components/Modal";
 
 interface ModalAction {
     row: Patient;
-    type: 'edit' | 'consult' | 'delete';
+    type: 'create' | 'edit' | 'delete';
 }
 
-const modalStyle = {
-    position: 'absolute' as 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    boxShadow: 24,
-    p: 4,
-    borderRadius: '8px',
-};
-
-export default function Patients() {
+export default function Home() {
     const [patients] = useState<Patient[]>(mock.patients);
-
     const { isDarkMode } = useDarkMode();
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
     const [selectedRow, setSelectedRow] = useState<Patient | null>(null);
-
-    const [openEditModal, setOpenEditModal] = useState(false);
-    const [openEncounterModal, setOpenEncounterModal] = useState(false);
+    const [openFormModal, setOpenFormModal] = useState(false);
+    const [formModalType, setFormModalType] = useState<'create' | 'edit'>('create');
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    // #region Form Handling
+    const {
+        reset: patientReset,
+        handleSubmit: patientSubmit,
+        register: patientRegister
+    } = useForm<FormPatientSchema>({
+        resolver: zodResolver(formPatientSchema)
+    })
 
-    // const { reset, handleSubmit, register } = useForm<FormInitEncounterSchema>({
-    //     resolver: zodResolver(formInitEncounterSchema)
-    // })
-
-    // #endregion
-    
     // #region Dropdown Menu
-
     const prevOpen = useRef(openMenuIndex !== null);
 
     const handleToggle = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
@@ -59,17 +73,24 @@ export default function Patients() {
             setOpenMenuIndex(null);
         }
     };
-
     // #endregion
 
     // #region Modal Handlers
-
-    const openModal = (row: Patient, type: ModalAction['type']) => {
+    const openModal = (type: ModalAction['type'], row?: Patient) => {
         handleClose();
-        setSelectedRow(row);
+
+        if (row) {
+            setSelectedRow(row);
+        }
+
         switch (type) {
+            case 'create':
+                setOpenFormModal(true);
+                setFormModalType('create');
+                break;
             case 'edit':
-                setOpenEditModal(true);
+                setOpenFormModal(true);
+                setFormModalType('edit');
                 break;
             case 'delete':
                 setOpenDeleteModal(true);
@@ -78,7 +99,6 @@ export default function Patients() {
                 break;
         }
     };
-
     // #endregion
 
     useEffect(() => {
@@ -88,6 +108,13 @@ export default function Patients() {
         prevOpen.current = openMenuIndex !== null;
     }, [openMenuIndex, anchorEl]);
 
+    useEffect(() => {
+        if (selectedRow) {
+            patientReset({
+                id: selectedRow.id ?? 0,
+            });
+        }
+    }, [selectedRow, patientReset]);
 
     return (
         <div className="container mx-auto">
@@ -95,7 +122,155 @@ export default function Patients() {
                 <h1 className={`text-xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     Pacientes
                 </h1>
+                <div className="flex justify-end">
+                    <Button variant="contained" onClick={() => openModal('create')}>
+                        <PlusIcon className="h-5 w-5 mr-2" />
+                        Novo paciente
+                    </Button>
+                </div>
             </div>
+
+            <FormSearch
+                onSubmit={(data) => console.log("Pesquisar", data)}
+                placeholder="Pesquisar nome, e-mail ou CPF..."
+            />
+
+            <div className={`flex justify-between items-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <TableContainer component="div">
+                    <Table stickyHeader aria-label="sticky table">
+                        <TableHead>
+                            <TableRow>
+                                {["Nome", "E-mail", "CPF", "Data de nascimento", ""].map((header, idx) => (
+                                    <TableCell
+                                        key={idx}
+                                        align={header ? 'left' : 'center'}
+                                        style={{
+                                            minWidth: 100,
+                                            backgroundColor: isDarkMode ? '#1e2939' : '#f8fafc',
+                                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
+                                        }}
+                                    >
+                                        {header}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
+
+                        <TableBody>
+                            {patients.map((row, index) => (
+                                <TableRow hover role="checkbox" tabIndex={-1} key={index}
+                                    sx={{
+                                        backgroundColor: isDarkMode ? '#1e2939' : 'white',
+                                        '&:hover': {
+                                            backgroundColor: isDarkMode ? '#334155' : '#f1f5f9',
+                                        }
+                                    }}
+                                >
+                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                        {row?.name} {row?.nameSecond}
+                                    </TableCell>
+                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                        {row.email}
+                                    </TableCell>
+                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                        {row?.document}
+                                    </TableCell>
+                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                        {moment(row.birthDate).format("DD/MM/YYYY")}
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Button
+                                            id={`composition-button-${index}`}
+                                            aria-controls={openMenuIndex === index ? 'composition-menu' : undefined}
+                                            aria-expanded={openMenuIndex === index ? 'true' : undefined}
+                                            aria-haspopup="true"
+                                            onClick={(event) => handleToggle(event, index)}
+                                        >
+                                            <EllipsisVerticalIcon className={`h-5 w-5 ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`} />
+                                        </Button>
+
+                                        <Popper
+                                            open={openMenuIndex === index}
+                                            anchorEl={anchorEl}
+                                            role={undefined}
+                                            placement="bottom-start"
+                                            transition
+                                            disablePortal
+                                            modifiers={[{ name: 'zIndex', enabled: true, phase: 'write', fn: ({ state }) => { state.elements.popper.style.zIndex = '1500'; } }]}
+                                        >
+                                            {({ TransitionProps, placement }) => (
+                                                <Grow
+                                                    {...TransitionProps}
+                                                    style={{
+                                                        transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
+                                                    }}
+                                                >
+                                                    <Paper
+                                                        sx={{
+                                                            zIndex: 1500,
+                                                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
+                                                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
+                                                            borderRadius: '0.5rem',
+                                                            boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.1)' : '0 4px 6px rgba(0, 0, 0, 0.2)',
+                                                        }}
+                                                    >
+                                                        <ClickAwayListener onClickAway={handleClose}>
+                                                            <MenuList id="composition-menu" aria-labelledby="composition-button" onKeyDown={handleListKeyDown}>
+                                                                <MenuItem onClick={() => openModal('edit', row)}>
+                                                                    <PencilIcon className="h-4 w-4 mr-2" /> Editar
+                                                                </MenuItem>
+                                                                <MenuItem onClick={() => openModal('delete', row)}>
+                                                                    <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
+                                                                </MenuItem>
+                                                            </MenuList>
+                                                        </ClickAwayListener>
+                                                    </Paper>
+                                                </Grow>
+                                            )}
+                                        </Popper>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </div>
+
+            {/* Modal de Formulário (Criar/Editar) */}
+            <ModalWrapper
+                open={openFormModal}
+                onClose={() => setOpenFormModal(false)}
+                title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Paciente`}
+                width={600}
+            >
+                <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
+                <div className="mt-4 flex justify-end gap-4">
+                    <Button variant="outlined" onClick={() => setOpenFormModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="contained">
+                        {formModalType === 'create' ? 'Criar' : 'Salvar'}
+                    </Button>
+                </div>
+            </ModalWrapper>
+
+            {/* Modal de Cancelamento */}
+            <ModalWrapper
+                open={openDeleteModal}
+                onClose={() => setOpenDeleteModal(false)}
+                title="Excluir Paciente"
+                width={400}
+            >
+                <Typography sx={{ mt: 2 }}>Deseja excluir o paciente?</Typography>
+                <div className="mt-4 flex justify-end gap-4">
+                    <Button variant="outlined" onClick={() => setOpenDeleteModal(false)}>
+                        Não
+                    </Button>
+                    <Button variant="contained" color="error">
+                        Sim
+                    </Button>
+                </div>
+            </ModalWrapper>
         </div>
-    )
+    );
 }

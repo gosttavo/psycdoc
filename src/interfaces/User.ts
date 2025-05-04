@@ -10,7 +10,7 @@ export interface User {
     gender: number;
     phone: string;
     email: string;
-    password: string;
+    password?: string;
     active: boolean;
     createdAt: string;
     updatedAt: string;
