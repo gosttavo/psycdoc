@@ -5,6 +5,6 @@ export const useLoginMutation = () => {
   return useMutation({
     mutationFn: AuthService.login,
     onSuccess: (data) => { return data; },
-    onError: (error: any) => { return error; },
+    onError: (error: Error) => { return error; },
   });
 };

@@ -17,6 +17,9 @@ export default function ClinicalEncounter() {
                     Consulta
                 </h1>
             </div>
+
+            <div className="flex flex-wrap gap-4 mb-4">
+            </div>
         </div>
     );
 }

@@ -4,8 +4,8 @@ import { FormField } from '../components/Form';
 const formSearchSchema = z.object({
     searchText: z
         .string()
-        .min(1, 'Search is required')
-        .max(100, 'Search must be less than 100 characters'),
+        .max(100, 'Search must be less than 100 characters')
+        .optional()
 });
 
 const formFields: FormField[] = [

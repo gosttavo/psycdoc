@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import moment from "moment";
-import mock from "../database/mock.json";
 import { useDarkMode } from "../hooks/useDarkMode";
 import {
     Button,
+    CircularProgress,
     ClickAwayListener,
     Grow,
     MenuItem,
@@ -24,7 +24,8 @@ import {
     ChevronDoubleRightIcon,
     PencilIcon,
     PlusIcon,
-    XMarkIcon
+    XMarkIcon,
+    ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
 import { useForm } from "react-hook-form";
 import { formInitEncounterSchema, FormInitEncounterSchema } from "../schemas/formEncounterSchema";
@@ -32,6 +33,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ClinicalEncounter } from "../interfaces/ClinicalEncounter";
 import FormSearch from "../components/FormSearch";
 import ModalWrapper from "../components/Modal";
+import { useGetEncounters } from "../hooks/useClinicalEncounter";
 
 interface ModalAction {
     row: ClinicalEncounter;
@@ -39,9 +41,14 @@ interface ModalAction {
 }
 
 export default function Home() {
-    const [clinicalEncounters] = useState<ClinicalEncounter[]>(mock.clinicalEncounters);
     const navigate = useNavigate();
+
+    const [searchText, setSearchText] = useState<string>('');
+    const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters(searchText);
+    const clinicalEncounters = encountersResponse || [];
+
     const { isDarkMode } = useDarkMode();
+
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [selectedRow, setSelectedRow] = useState<ClinicalEncounter | null>(null);
@@ -59,6 +66,7 @@ export default function Home() {
     })
 
     // #region Dropdown Menu
+
     const prevOpen = useRef(openMenuIndex !== null);
 
     const handleToggle = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
@@ -77,9 +85,11 @@ export default function Home() {
             setOpenMenuIndex(null);
         }
     };
+
     // #endregion
 
     // #region Modal Handlers
+
     const openModal = (type: ModalAction['type'], row?: ClinicalEncounter) => {
         handleClose();
 
@@ -106,7 +116,12 @@ export default function Home() {
                 break;
         }
     };
+
     // #endregion
+
+    const handleSearch = (text: string) => {
+        setSearchText(text);
+    };
 
     useEffect(() => {
         if (prevOpen.current && openMenuIndex === null) {
@@ -139,112 +154,147 @@ export default function Home() {
             </div>
 
             <FormSearch
-                onSubmit={(data) => console.log("Pesquisar", data)}
+                onSubmit={ (data) => handleSearch(data?.searchText ?? '') }
                 placeholder="Pesquisar por paciente, profissional, data..."
             />
 
             <div className={`flex justify-between items-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <TableContainer component="div">
-                    <Table stickyHeader aria-label="sticky table">
-                        <TableHead>
-                            <TableRow>
-                                {["Paciente", "Profissional", "Data", "Status", ""].map((header, idx) => (
-                                    <TableCell
-                                        key={idx}
-                                        align={header ? 'left' : 'center'}
-                                        style={{
-                                            minWidth: 100,
-                                            backgroundColor: isDarkMode ? '#1e2939' : '#f8fafc',
-                                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
+                {isLoading ? (
+                    <div className="w-full flex justify-center items-center p-8">
+                        <CircularProgress />
+                    </div>
+                ) : isError ? (
+                    <div className="w-full flex flex-col items-center justify-center p-8 text-center">
+                        <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mb-4" />
+                        <Typography variant="h6" color="error">
+                            Erro ao carregar consultas
+                        </Typography>
+                        <Typography variant="body2" className="mt-2">
+                            Não foi possível carregar as consultas. Tente novamente.
+                        </Typography>
+                        <Button 
+                            variant="outlined" 
+                            color="error" 
+                            className="mt-4"
+                            onClick={() => refetch()}
+                        >
+                            Tentar novamente
+                        </Button>
+                    </div>
+                ) : (
+                    <TableContainer component="div">
+                        <Table stickyHeader aria-label="sticky table">
+                            <TableHead>
+                                <TableRow>
+                                    {["Paciente", "Profissional", "Data", "Status", ""].map((header, idx) => (
+                                        <TableCell
+                                            key={idx}
+                                            align={header ? 'left' : 'center'}
+                                            style={{
+                                                minWidth: 100,
+                                                backgroundColor: isDarkMode ? '#1e2939' : '#f8fafc',
+                                                color: isDarkMode ? '#e2e8f0' : '#1e2939',
+                                            }}
+                                        >
+                                            {header}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                                {clinicalEncounters?.length ? clinicalEncounters.map((row, index) => (
+                                    <TableRow hover role="checkbox" tabIndex={-1} key={index}
+                                        sx={{
+                                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
+                                            '&:hover': {
+                                                backgroundColor: isDarkMode ? '#334155' : '#f1f5f9',
+                                            }
                                         }}
                                     >
-                                        {header}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        </TableHead>
+                                        <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                            {row.patient?.name} {row.patient?.nameSecond}
+                                        </TableCell>
+                                        <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                            {row.user?.name} {row.user?.nameSecond} {row.user?.documentCrm && `(${row.user?.documentCrm})`}
+                                        </TableCell>
+                                        <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                            {moment(row.encounterDate).format("DD/MM/YYYY")}
+                                        </TableCell>
+                                        <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                            {row.status}
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Button
+                                                id={`composition-button-${index}`}
+                                                aria-controls={openMenuIndex === index ? 'composition-menu' : undefined}
+                                                aria-expanded={openMenuIndex === index ? 'true' : undefined}
+                                                aria-haspopup="true"
+                                                onClick={(event) => handleToggle(event, index)}
+                                            >
+                                                <EllipsisVerticalIcon className={`h-5 w-5 ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`} />
+                                            </Button>
 
-                        <TableBody>
-                            {clinicalEncounters.map((row, index) => (
-                                <TableRow hover role="checkbox" tabIndex={-1} key={index}
-                                    sx={{
-                                        backgroundColor: isDarkMode ? '#1e2939' : 'white',
-                                        '&:hover': {
-                                            backgroundColor: isDarkMode ? '#334155' : '#f1f5f9',
-                                        }
-                                    }}
-                                >
-                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                        {row.patient?.name} {row.patient?.nameSecond}
-                                    </TableCell>
-                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                        {row.user?.name} {row.user?.nameSecond} {row.user?.documentCrm && `(${row.user?.documentCrm})`}
-                                    </TableCell>
-                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                        {moment(row.encounterDate).format("DD/MM/YYYY")}
-                                    </TableCell>
-                                    <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                        {row.status}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Button
-                                            id={`composition-button-${index}`}
-                                            aria-controls={openMenuIndex === index ? 'composition-menu' : undefined}
-                                            aria-expanded={openMenuIndex === index ? 'true' : undefined}
-                                            aria-haspopup="true"
-                                            onClick={(event) => handleToggle(event, index)}
-                                        >
-                                            <EllipsisVerticalIcon className={`h-5 w-5 ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`} />
-                                        </Button>
-
-                                        <Popper
-                                            open={openMenuIndex === index}
-                                            anchorEl={anchorEl}
-                                            role={undefined}
-                                            placement="bottom-start"
-                                            transition
-                                            disablePortal
-                                            modifiers={[{ name: 'zIndex', enabled: true, phase: 'write', fn: ({ state }) => { state.elements.popper.style.zIndex = '1500'; } }]}
-                                        >
-                                            {({ TransitionProps, placement }) => (
-                                                <Grow
-                                                    {...TransitionProps}
-                                                    style={{
-                                                        transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
-                                                    }}
-                                                >
-                                                    <Paper
-                                                        sx={{
-                                                            zIndex: 1500,
-                                                            color: isDarkMode ? '#e2e8f0' : '#1e2939',
-                                                            backgroundColor: isDarkMode ? '#1e2939' : 'white',
-                                                            borderRadius: '0.5rem',
-                                                            boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.1)' : '0 4px 6px rgba(0, 0, 0, 0.2)',
+                                            <Popper
+                                                open={openMenuIndex === index}
+                                                anchorEl={anchorEl}
+                                                role={undefined}
+                                                placement="bottom-start"
+                                                transition
+                                                disablePortal
+                                                modifiers={[{ name: 'zIndex', enabled: true, phase: 'write', fn: ({ state }) => { state.elements.popper.style.zIndex = '1500'; } }]}
+                                            >
+                                                {({ TransitionProps, placement }) => (
+                                                    <Grow
+                                                        {...TransitionProps}
+                                                        style={{
+                                                            transformOrigin: placement === 'bottom-start' ? 'left top' : 'left bottom',
                                                         }}
                                                     >
-                                                        <ClickAwayListener onClickAway={handleClose}>
-                                                            <MenuList id="composition-menu" aria-labelledby="composition-button" onKeyDown={handleListKeyDown}>
-                                                                <MenuItem onClick={() => openModal('consult', row)}>
-                                                                    <ChevronDoubleRightIcon className="h-4 w-4 mr-2" /> Consultar
-                                                                </MenuItem>
-                                                                <MenuItem onClick={() => openModal('edit', row)}>
-                                                                    <PencilIcon className="h-4 w-4 mr-2" /> Editar
-                                                                </MenuItem>
-                                                                <MenuItem onClick={() => openModal('delete', row)}>
-                                                                    <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
-                                                                </MenuItem>
-                                                            </MenuList>
-                                                        </ClickAwayListener>
-                                                    </Paper>
-                                                </Grow>
-                                            )}
-                                        </Popper>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                                        <Paper
+                                                            sx={{
+                                                                zIndex: 1500,
+                                                                color: isDarkMode ? '#e2e8f0' : '#1e2939',
+                                                                backgroundColor: isDarkMode ? '#1e2939' : 'white',
+                                                                borderRadius: '0.5rem',
+                                                                boxShadow: isDarkMode ? '0 4px 6px rgba(0, 0, 0, 0.1)' : '0 4px 6px rgba(0, 0, 0, 0.2)',
+                                                            }}
+                                                        >
+                                                            <ClickAwayListener onClickAway={handleClose}>
+                                                                <MenuList id="composition-menu" aria-labelledby="composition-button" onKeyDown={handleListKeyDown}>
+                                                                    <MenuItem onClick={() => openModal('consult', row)}>
+                                                                        <ChevronDoubleRightIcon className="h-4 w-4 mr-2" /> Consultar
+                                                                    </MenuItem>
+                                                                    <MenuItem onClick={() => openModal('edit', row)}>
+                                                                        <PencilIcon className="h-4 w-4 mr-2" /> Editar
+                                                                    </MenuItem>
+                                                                    <MenuItem onClick={() => openModal('delete', row)}>
+                                                                        <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
+                                                                    </MenuItem>
+                                                                </MenuList>
+                                                            </ClickAwayListener>
+                                                        </Paper>
+                                                    </Grow>
+                                                )}
+                                            </Popper>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} align="center" className="text-center">
+                                            <div className={`flex items-center justify-center ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                <ExclamationTriangleIcon className="h-6 w-6 mr-2" />
+                                                <Typography variant="subtitle1">
+                                                    Nenhuma consulta encontrada
+                                                </Typography>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
             </div>
 
             {/* Modal de Iniciar Consulta */}
