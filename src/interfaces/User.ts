@@ -4,14 +4,15 @@ export interface User {
     name: string;
     nameSecond: string;
     nameCalledBy: string;
+    motherName: string;
     document: string;
-    documentCrm: string;
+    documentCrp: string;
     birthDate: string;
     gender: number;
     phone: string;
     email: string;
     password?: string;
-    active: boolean;
+    active: number;
     createdAt: string;
     updatedAt: string;
 }

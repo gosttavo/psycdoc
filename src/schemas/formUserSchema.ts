@@ -8,17 +8,25 @@ const formUserSchema = z.object({
     nameCalledBy: z.string().optional(),
     motherName: z.string().optional(),
     document: z.string().optional(),
-    documentCrm: z.string(),
+    documentCrp: z.string(),
     birthDate: z.string(),
     gender: z.number().min(1),
     phone: z.string().optional(),
     email: z.string().email('Invalid email format').optional(),
-    active: z.boolean().optional(),
+    active: z.number().optional(),
 })
 
 type FormUserSchema = z.infer<typeof formUserSchema>;
 
+const formDeleteUserSchema = z.object({
+    id: z.number()
+})
+
+type FormDeleteUserSchema = z.infer<typeof formDeleteUserSchema>;
+
 export {
     formUserSchema, 
-    type FormUserSchema
+    type FormUserSchema,
+    formDeleteUserSchema,
+    type FormDeleteUserSchema
 };

@@ -314,7 +314,7 @@ export default function Home() {
                         <Table stickyHeader aria-label="sticky table">
                             <TableHead>
                                 <TableRow>
-                                    {["Paciente", "Profissional", "Data", "Status", ""].map((header, idx) => (
+                                    {["Paciente", "Profissional", "Data", "Status", "Pago", ""].map((header, idx) => (
                                         <TableCell
                                             key={idx}
                                             align={header ? 'left' : 'center'}
@@ -344,13 +344,16 @@ export default function Home() {
                                             {row.patient?.name} {row.patient?.nameSecond}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                            {row.user?.name} {row.user?.nameSecond} {row.user?.documentCrm && `(${row.user?.documentCrm})`}
+                                            {row.user?.name} {row.user?.nameSecond} {row.user?.documentCrp && `(${row.user?.documentCrp})`}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
                                             {moment(row.encounterDate).format("DD/MM/YYYY")}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
                                             {row.status}
+                                        </TableCell>
+                                        <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
+                                            {row.paid}
                                         </TableCell>
                                         <TableCell align="center">
                                             <Button

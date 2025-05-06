@@ -12,11 +12,20 @@ const formPatientSchema = z.object({
     gender: z.number().min(1),
     phone: z.string().optional(),
     email: z.string().email('Invalid email format').optional(),
+    active: z.number().optional(),
 })
 
 type FormPatientSchema = z.infer<typeof formPatientSchema>;
 
+const formDeletePatientSchema = z.object({
+    id: z.number()
+})
+
+type FormDeletePatientSchema = z.infer<typeof formDeletePatientSchema>;
+
 export {
     formPatientSchema, 
-    type FormPatientSchema
+    type FormPatientSchema,
+    formDeletePatientSchema,
+    type FormDeletePatientSchema
 };

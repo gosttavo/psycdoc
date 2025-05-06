@@ -8,9 +8,9 @@ export interface Patient {
     document: string;
     birthDate: string;
     gender: number;
-    CPF: string;
     phone: string;
     email: string;
+    active: number;
     createdAt: string;
     updatedAt: string;
 }
