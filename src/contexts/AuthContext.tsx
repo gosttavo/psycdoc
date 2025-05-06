@@ -9,6 +9,7 @@ import { User } from "../interfaces/User";
 import { useNavigate } from "react-router";
 import AuthService from "../api/services/AuthService/service";
 import { AuthLoginResponse } from "../interfaces/Auth";
+import { useToast } from "./ToastContext";
   
 interface AuthContextType {
     user: User | null;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [user, setUser] = useState<User | null>(() => {
         const storedUser = localStorage.getItem("user");
@@ -30,9 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (userData: AuthLoginResponse) => {
         try {
             const user = await AuthService.getUser(userData.data.id);
+            console.log("User data:", user);
             setUser(user);
             localStorage.setItem("user", JSON.stringify(user));
             navigate('/');
+            showToast(`Bem-vindo(a), ${user.name}!`, "success");
         } catch (err) {
             console.error("Failed to fetch user", err);
             logout();

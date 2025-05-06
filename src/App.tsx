@@ -22,28 +22,28 @@ const App: React.FC = () => {
   return (
     <Router>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Suspense fallback={<LoadingSpinner />}>
-            <DarkModeProvider>
-            <ToastProvider>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/" element={<RootLayout />}>
-                      <Route index element={<Home />} />
-                      <Route path="/users" element={<Users />} />
-                      <Route path="/patients" element={<Patients />} />
-                      <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/profile" element={<Profile />} />
+        <ToastProvider>
+          <AuthProvider>
+            <Suspense fallback={<LoadingSpinner />}>
+              <DarkModeProvider>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/" element={<RootLayout />}>
+                        <Route index element={<Home />} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/patients" element={<Patients />} />
+                        <Route path="/:id/clinicalEncounter" element={<ClinicalEncounter />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/profile" element={<Profile />} />
+                      </Route>
                     </Route>
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ToastProvider>
-            </DarkModeProvider>
-          </Suspense>
-        </AuthProvider>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+              </DarkModeProvider>
+            </Suspense>
+          </AuthProvider>
+        </ToastProvider>
       </QueryClientProvider>
     </Router>
   );

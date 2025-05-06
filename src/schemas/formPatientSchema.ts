@@ -9,7 +9,7 @@ const formPatientSchema = z.object({
     motherName: z.string().optional(),
     document: z.string().optional(),
     birthDate: z.string(),
-    gender: z.number().min(1),
+    gender: z.number().optional(),
     phone: z.string().optional(),
     email: z.string().email('Invalid email format').optional(),
     active: z.number().optional(),

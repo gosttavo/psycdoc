@@ -10,9 +10,10 @@ const formUserSchema = z.object({
     document: z.string().optional(),
     documentCrp: z.string(),
     birthDate: z.string(),
-    gender: z.number().min(1),
+    gender: z.number().optional(),
     phone: z.string().optional(),
     email: z.string().email('Invalid email format').optional(),
+    password: z.string().optional(),
     active: z.number().optional(),
 })
 

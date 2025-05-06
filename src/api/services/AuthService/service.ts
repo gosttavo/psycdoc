@@ -19,10 +19,12 @@ export default class AuthService {
   };
 
   public static getUser = async (id: number) => {
-    return await request({
+    const user = await request({
       url: `${AuthEndpoints.me()}?id=${id}`,
       method: "GET",
       headers: { "Content-Type": "application/json" }
     });
+
+    return user[0];
   };
 }

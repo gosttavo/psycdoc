@@ -191,9 +191,10 @@ export default function Home() {
                     document: '',
                     documentCrp: '',
                     birthDate: '',
-                    gender: 1,
+                    gender: 0,
                     phone: '',
                     email: '',
+                    password: '',
                     active: 1,
                 });
 
@@ -248,6 +249,7 @@ export default function Home() {
                 gender: selectedRow?.gender ?? 1,
                 phone: selectedRow?.phone ?? '',
                 email: selectedRow?.email ?? '',
+                password: '',
                 active: selectedRow?.active ?? 1,
             });
         }
@@ -269,7 +271,7 @@ export default function Home() {
 
             <FormSearch
                 onSubmit={ (data) => handleSearch(data?.searchText ?? '') }
-                placeholder="Pesquisar por paciente, profissional, data..."
+                placeholder="Pesquisar por nome, sobrenome, e-mail, CRP, CPF ou data de nascimento..."
             />
 
             <div className={`flex justify-between items-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -424,7 +426,6 @@ export default function Home() {
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Médico`}
                 width={1000}
             >
-                <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
                 <form onSubmit={userSubmit(onSubmitUser)}>
                     <div className="grid grid-cols-12 gap-4">
                         <input
@@ -538,6 +539,19 @@ export default function Home() {
                         />
                         {errors.email && <p>{errors.email.message}</p>}
                         <MuiTextField
+                            type="password"
+                            label="Senha"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...userRegister('password')}
+                            defaultValue={selectedRow?.email ?? ''}
+                            slotProps={slotProps}
+                            size="small"
+                            className={`col-span-12 sm:col-span-4 rounded-md`}
+                        />
+                        {errors.password && <p>{errors.password.message}</p>}
+                        <MuiTextField
                             label="Telefone"
                             variant="outlined"
                             fullWidth
@@ -647,20 +661,23 @@ export default function Home() {
                             {...deleteUserRegister('id')}
                             value={selectedRow?.id ?? 0}
                         />
-                        <Button
-                            variant="outlined"
-                            type="reset"
-                            onClick={() => setOpenDeleteModal(false)}
-                        >
-                            Não
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            type="submit"
-                        >
-                            Sim
-                        </Button>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outlined"
+                                type="reset"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="mr-2"
+                            >
+                                Não
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                type="submit"
+                            >
+                                Sim
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </ModalWrapper>

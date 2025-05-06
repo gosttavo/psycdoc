@@ -190,7 +190,7 @@ export default function Home() {
                     motherName: '',
                     document: '',
                     birthDate: '',
-                    gender: 1,
+                    gender: 0,
                     phone: '',
                     email: '',
                     active: 1,
@@ -267,7 +267,7 @@ export default function Home() {
 
             <FormSearch
                 onSubmit={ (data) => handleSearch(data?.searchText ?? '') }
-                placeholder="Pesquisar por paciente, profissional, data..."
+                placeholder="Pesquisar por nome, sobrenome, e-mail, CPF ou data de nascimento..."
             />
 
             <div className={`flex justify-between items-center mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-3 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -419,7 +419,6 @@ export default function Home() {
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Paciente`}
                 width={1000}
             >
-                <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
                 <form onSubmit={patientSubmit(onSubmitPatient)}>
                     <div className="grid grid-cols-12 gap-4">
                         <input
@@ -630,20 +629,23 @@ export default function Home() {
                             {...deletePatientRegister('id')}
                             value={selectedRow?.id ?? 0}
                         />
-                        <Button
-                            variant="outlined"
-                            type="reset"
-                            onClick={() => setOpenDeleteModal(false)}
-                        >
-                            Não
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            type="submit"
-                        >
-                            Sim
-                        </Button>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outlined"
+                                type="reset"
+                                onClick={() => setOpenDeleteModal(false)}
+                                className="mr-2"
+                            >
+                                Não
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                type="submit"
+                            >
+                                Sim
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </ModalWrapper>
