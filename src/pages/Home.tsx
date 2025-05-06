@@ -17,7 +17,12 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Typography
+    Typography,
+    TextField as MuiTextField,
+    Select,
+    Box,
+    FormControl,
+    InputLabel
 } from "@mui/material";
 import {
     EllipsisVerticalIcon,
@@ -27,13 +32,18 @@ import {
     XMarkIcon,
     ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
-import { useForm } from "react-hook-form";
-import { formInitEncounterSchema, FormInitEncounterSchema } from "../schemas/formEncounterSchema";
+import { Controller, useForm } from "react-hook-form";
+import { formClinicalEncounterSchema, FormClinicalEncounterSchema, formDeleteEncounterSchema, FormDeleteEncounterSchema, formInitEncounterSchema, FormInitEncounterSchema } from "../schemas/formEncounterSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClinicalEncounter } from "../interfaces/ClinicalEncounter";
 import FormSearch from "../components/FormSearch";
 import ModalWrapper from "../components/Modal";
-import { useGetEncounters } from "../hooks/useClinicalEncounter";
+import { 
+    useCreateEncounter, 
+    useDeleteEncounter, 
+    useGetEncounters,
+    useUpdateEncounter
+} from "../hooks/useClinicalEncounter";
 
 interface ModalAction {
     row: ClinicalEncounter;
@@ -41,14 +51,10 @@ interface ModalAction {
 }
 
 export default function Home() {
+    const { isDarkMode } = useDarkMode();
     const navigate = useNavigate();
 
     const [searchText, setSearchText] = useState<string>('');
-    const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters(searchText);
-    const clinicalEncounters = encountersResponse || [];
-
-    const { isDarkMode } = useDarkMode();
-
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [selectedRow, setSelectedRow] = useState<ClinicalEncounter | null>(null);
@@ -57,6 +63,29 @@ export default function Home() {
     const [openEncounterModal, setOpenEncounterModal] = useState(false);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
+    const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters(searchText);
+    const clinicalEncounters = encountersResponse || [];
+
+    const slotProps = {
+        input: {
+            style: {
+                color: isDarkMode ? '#fff' : '#000',
+            },
+        },
+        root: {
+            sx: {
+                '& .MuiInputLabel-root': {
+                    color: isDarkMode ? '#ccc' : '#666',
+                },
+                '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': {
+                    borderColor: isDarkMode ? '#555' : '#ccc',
+                },
+            }
+        }
+    }
+
+    // #region Form Handlers
+
     const {
         reset: encounterReset,
         handleSubmit: encounterSubmit,
@@ -64,6 +93,71 @@ export default function Home() {
     } = useForm<FormInitEncounterSchema>({
         resolver: zodResolver(formInitEncounterSchema)
     })
+    
+    const {
+        reset: clinicalEncounterReset,
+        handleSubmit: clinicalEncounterSubmit,
+        register: clinicalEncounterRegister,
+        control: clinicalEncounterControl,
+        formState: { errors }
+    } = useForm<FormClinicalEncounterSchema>({
+        resolver: zodResolver(formClinicalEncounterSchema)
+    })
+
+    const {
+        reset: deleteEncounterReset,
+        handleSubmit: deleteEncounterSubmit,
+        register: deleteEncounterRegister,
+    } = useForm<FormDeleteEncounterSchema>({
+        resolver: zodResolver(formDeleteEncounterSchema)
+    })
+
+    const { mutate: createEncounter } = useCreateEncounter();
+    const { mutate: updateEncounter } = useUpdateEncounter();
+    const { mutate: deleteEncounter } = useDeleteEncounter();
+
+    const onSubmitClinicalEncounter = (data: FormClinicalEncounterSchema) => {
+        try {
+            if (formModalType === 'create') {
+                createEncounter(data as ClinicalEncounter, {
+                    onSuccess: () => {
+                        setOpenFormModal(false);
+                        clinicalEncounterReset();
+                        refetch();
+                    },
+                    onError: (error) => {
+                        console.error("Error creating encounter:", error);
+                    }
+                });
+            } else {
+                updateEncounter({ id: selectedRow?.id ?? 0, clinicalEncounter: data as ClinicalEncounter }, {
+                    onSuccess: () => {
+                        setOpenFormModal(false);
+                        clinicalEncounterReset();
+                        refetch();
+                    },
+                    onError: (error) => {
+                        console.error("Error updating encounter:", error);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Unexpected error:", error);
+        }
+    };
+
+    const onDeleteConfirm = () => {
+        if (selectedRow?.id) {
+            deleteEncounter(selectedRow.id, {
+                onSuccess: () => {
+                    setOpenDeleteModal(false);
+                    refetch();
+                }
+            });
+        }
+    };
+
+    // #endregion
 
     // #region Dropdown Menu
 
@@ -99,6 +193,19 @@ export default function Home() {
 
         switch (type) {
             case 'create':
+                clinicalEncounterReset({
+                    id: 0,
+                    tenantId: 1,
+                    userId: 13,
+                    patientId: 0,
+                    encounterDate: '',
+                    status: 0,
+                    paid: 0,
+                    contentHtml: '',
+                    contentText: '',
+                    gptResponse: '',
+                });
+
                 setOpenFormModal(true);
                 setFormModalType('create');
                 break;
@@ -119,9 +226,13 @@ export default function Home() {
 
     // #endregion
 
+    // #region Search Handler
+
     const handleSearch = (text: string) => {
         setSearchText(text);
     };
+
+    // #endregion
 
     useEffect(() => {
         if (prevOpen.current && openMenuIndex === null) {
@@ -133,11 +244,28 @@ export default function Home() {
     useEffect(() => {
         if (selectedRow) {
             encounterReset({
-                patient: selectedRow.patientId ?? 0,
+                patient: selectedRow?.patient?.id ?? 0,
                 status: 2,
             });
+
+            deleteEncounterReset({
+                id: selectedRow?.id ?? 0,
+            })
+            
+            clinicalEncounterReset({
+                id: selectedRow?.id,
+                tenantId: selectedRow?.tenantId ?? 1,
+                userId: selectedRow?.user?.id ?? 13,
+                patientId: selectedRow?.patient?.id ?? 0,
+                encounterDate: selectedRow.encounterDate ? moment(selectedRow.encounterDate).format('YYYY-MM-DD') : '',
+                status: selectedRow.status ?? 0,
+                paid: selectedRow.paid ? 1 : 0,
+                contentHtml: selectedRow.contentHtml ?? '',
+                contentText: selectedRow.contentText ?? '',
+                gptResponse: selectedRow.gptResponse ?? '',
+            });
         }
-    }, [selectedRow, encounterReset]);
+    }, [selectedRow, encounterReset, deleteEncounterReset, clinicalEncounterReset]);
 
     return (
         <div className="container mx-auto">
@@ -338,17 +466,142 @@ export default function Home() {
                 open={openFormModal}
                 onClose={() => setOpenFormModal(false)}
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Consulta`}
-                width={600}
+                width={1000}
             >
                 <Typography sx={{ mt: 2 }}>Formulário de edição aqui.</Typography>
-                <div className="mt-4 flex justify-end gap-4">
-                    <Button variant="outlined" onClick={() => setOpenFormModal(false)}>
-                        Cancelar
-                    </Button>
-                    <Button variant="contained">
-                        {formModalType === 'create' ? 'Criar' : 'Salvar'}
-                    </Button>
-                </div>
+                <form onSubmit={clinicalEncounterSubmit(onSubmitClinicalEncounter)}>
+                    <div className="grid grid-cols-12 gap-4">
+                        <input
+                            type="hidden"
+                            {...clinicalEncounterRegister('id', { valueAsNumber: true })}
+                            defaultValue={0}
+                        />
+                        {errors.id && <p>{errors.id.message}</p>}
+                        <input
+                            type="hidden"
+                            {...clinicalEncounterRegister('tenantId', { valueAsNumber: true })}
+                            defaultValue={1}
+                        />
+                        {errors.tenantId && <p>{errors.tenantId.message}</p>}
+                        <MuiTextField
+                            label="Paciente"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...clinicalEncounterRegister('patientId', { valueAsNumber: true })}
+                            defaultValue={selectedRow?.patientId ?? 0}
+                            slotProps={slotProps}
+                            size="small"
+                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        />
+                        {errors.patientId && <p>{errors.patientId.message}</p>}
+                        <MuiTextField
+                            label="Médico"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...clinicalEncounterRegister('userId', { valueAsNumber: true }) }
+                            defaultValue={selectedRow?.userId ?? 0}
+                            slotProps={slotProps}
+                            size="small"
+                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        />
+                        {errors.userId && <p>{errors.userId.message}</p>}
+                        <MuiTextField
+                            type="date"
+                            label="Data"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...clinicalEncounterRegister('encounterDate')}
+                            defaultValue={selectedRow?.encounterDate ? moment(selectedRow.encounterDate).format('YYYY-MM-DD') : ''}
+                            slotProps={slotProps}
+                            size="small"
+                            className={`col-span-12 sm:col-span-4 rounded-md`}
+                        />
+                        {errors.encounterDate && <p>{errors.encounterDate.message}</p>}
+                        <Controller
+                            name="paid"
+                            control={clinicalEncounterControl}
+                            render={({ field }) => (
+                                <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                    <FormControl fullWidth>
+                                        <InputLabel 
+                                            sx={{
+                                                transform: 'translate(14px, 8px) scale(1)',
+                                                '&.Mui-focused, &.MuiFormLabel-filled': {
+                                                transform: 'translate(14px, -9px) scale(0.75)'
+                                                }
+                                            }}
+                                            id="paid"
+                                        >
+                                            Pago
+                                        </InputLabel>
+                                        <Select
+                                            {...field}
+                                            size="small"
+                                            labelId="paid"
+                                            id="paid"
+                                            label="Pago"
+                                        >
+                                            <MenuItem value={1}>Sim</MenuItem>
+                                            <MenuItem value={0}>Não</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
+                        />
+                        {errors.paid && <p>{errors.paid.message}</p>}
+                        <Controller
+                            name="status"
+                            control={clinicalEncounterControl}
+                            render={({ field }) => (
+                                <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                    <FormControl fullWidth>
+                                        <InputLabel
+                                        sx={{
+                                            transform: 'translate(14px, 8px) scale(1)',
+                                            '&.Mui-focused, &.MuiFormLabel-filled': {
+                                            transform: 'translate(14px, -9px) scale(0.75)'
+                                            }
+                                        }}
+                                        id="paid"
+                                        >
+                                            Status
+                                        </InputLabel>
+                                        <Select
+                                            {...field}
+                                            size="small"
+                                            labelId="status"
+                                            id="status"
+                                            label="Status"
+                                        >
+                                            <MenuItem value={0}>Agendado</MenuItem>
+                                            <MenuItem value={1}>Concluído</MenuItem>
+                                            <MenuItem value={2}>Cancelado</MenuItem>
+                                            <MenuItem value={3}>Faltante</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
+                        />
+                        {errors.status && <p>{errors.status.message}</p>}
+                    </div>
+                    <div className="mt-4 flex justify-end gap-4">
+                        <Button
+                            variant="outlined"
+                            onClick={() => setOpenFormModal(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="contained"
+                            type="submit"
+                        >
+                            {formModalType === 'create' ? 'Criar' : 'Salvar'}
+                        </Button>
+                    </div>
+                </form>
             </ModalWrapper>
 
             {/* Modal de Cancelamento */}
@@ -360,12 +613,27 @@ export default function Home() {
             >
                 <Typography sx={{ mt: 2 }}>Deseja realmente cancelar a consulta?</Typography>
                 <div className="mt-4 flex justify-end gap-4">
-                    <Button variant="outlined" onClick={() => setOpenDeleteModal(false)}>
-                        Não
-                    </Button>
-                    <Button variant="contained" color="error">
-                        Sim, cancelar
-                    </Button>
+                    <form onSubmit={deleteEncounterSubmit(onDeleteConfirm)}>
+                        <input
+                            type="hidden"
+                            {...deleteEncounterRegister('id')}
+                            value={selectedRow?.id ?? 0}
+                        />
+                        <Button
+                            variant="outlined"
+                            type="reset"
+                            onClick={() => setOpenDeleteModal(false)}
+                        >
+                            Não
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            type="submit"
+                        >
+                            Sim, cancelar
+                        </Button>
+                    </form>
                 </div>
             </ModalWrapper>
         </div>

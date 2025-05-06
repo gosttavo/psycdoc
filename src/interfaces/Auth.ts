@@ -5,5 +5,9 @@ export interface AuthLoginBody {
 
 export interface AuthLoginResponse {
     success: boolean;
-    userId: number;
+    data: {
+        id: number;
+        email: string;
+        tenantId: number;
+    };
 }

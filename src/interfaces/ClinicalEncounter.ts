@@ -8,12 +8,12 @@ export interface ClinicalEncounter {
     patientId: number;
     encounterDate: string;
     status: number;
-    paid: boolean;
-    contentHtml: string;
-    contentText: string;
-    gptResponse: string;
-    createdAt: string;
-    updatedAt: string;
+    paid: number;
+    contentHtml?: string;
+    contentText?: string;
+    gptResponse?: string;
+    createdAt?: string;
+    updatedAt?: string;
     patient?: Patient;
     user?: User;
   }

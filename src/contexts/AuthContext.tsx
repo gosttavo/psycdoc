@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (userData: AuthLoginResponse) => {
         try {
-            const user = await AuthService.getUser(userData.userId);
+            const user = await AuthService.getUser(userData.data.id);
             setUser(user);
             localStorage.setItem("user", JSON.stringify(user));
             navigate('/');

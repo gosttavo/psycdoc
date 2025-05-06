@@ -1,29 +1,64 @@
-import { GenericForm } from "../components/Form";
-import { formFields, formLoginSchema, FormLoginSchema } from "../schemas/formLoginSchema";
+import { formLoginSchema, FormLoginSchema } from "../schemas/formLoginSchema";
 import { useAuth } from '../contexts/AuthContext';
 import { useLogin } from "../hooks/useLogin";
 import { useToast } from "../contexts/ToastContext";
+import { Button, TextField, Typography } from "@mui/material";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 export default function Login() {
     const { login: loginToContext } = useAuth();
     const { mutateAsync } = useLogin();
     const { showToast } = useToast();
-    
-    const handleSubmit = async (data: FormLoginSchema) => {
-        try {
-            const result = await mutateAsync(data);
 
+    const {
+        register,
+        handleSubmit,
+        formState: { isSubmitting },
+    } = useForm<FormLoginSchema>({
+        resolver: zodResolver(formLoginSchema)
+    })
+    
+    const onSubmit = async (data: FormLoginSchema) => {
+        try {
+            console.log(data);
+            const result = await mutateAsync(data);
+            
             if (result?.success) {
-                loginToContext({ success: result.success, userId: result.id });
+                loginToContext({ 
+                    success: true, 
+                    data: {
+                        id: result.data.id,
+                        email: result.data.email,
+                        tenantId: result.data.tenantId
+                    }
+                });
             } else {
                 showToast("Credenciais inválidas!", "error");
-                throw new Error("Login inválido");
             }
-        } catch (err: string | any) {
+        } catch (error) {
             showToast("Erro ao realizar login, contate o suporte.", "error");
-            throw new Error("Login inválido");
+            console.error(error);
         }
     };
+
+    const slotProps = {
+        input: {
+            style: {
+                color: '#000',
+            },
+        },
+        root: {
+            sx: {
+                '& .MuiInputLabel-root': {
+                    color: '#ccc',
+                },
+                '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#555',
+                },
+            }
+        }
+    }
 
     return (
         <div className="flex h-screen md:flex-row">
@@ -31,18 +66,52 @@ export default function Login() {
                 <img src="assets/doc.png" alt="A doctor picture" />
             </section>
             <section className="w-full flex flex-col md:w-1/2 justify-center items-center bg-gradient-to-b from-blue-700 to-blue-500">
-                <p className="text-slate-300 text-5xl font-bold mb-6">
+                <p className="text-white text-5xl font-bold mb-6">
                     PsycDoc
                 </p>
-                <GenericForm<FormLoginSchema>
-                    containerClassName="w-full max-w-sm p-4 bg-slate-200 rounded-lg shadow-md"
-                    fieldsContainerClassName="w-full flex flex-col gap-4"
-                    fields={formFields}
-                    schema={formLoginSchema}
-                    onSubmit={handleSubmit}
-                    formTitle="Entrar"
-                    submitButtonText="Entrar"
-                />
+                <div className="bg-white rounded-lg p-4">
+                    <Typography variant="h5" component="h2" className="mb-6 text-center">
+                        Entrar
+                    </Typography>
+            
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <TextField
+                            label="E-mail"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...register('email') }
+                            slotProps={slotProps}
+                            size="small"
+                            type="email"
+                            autoComplete="email"
+                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        />
+                        <TextField
+                            label="Senha"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            {...register('password') }
+                            slotProps={slotProps}
+                            size="small"
+                            type="password"
+                            autoComplete="current-password"
+                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        />
+                        <div className="mt-6 flex">
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                size="large"
+                                disabled={isSubmitting}
+                                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            >
+                                {isSubmitting ? 'Salvando...' : 'Entrar'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
             </section>
         </div>
     )

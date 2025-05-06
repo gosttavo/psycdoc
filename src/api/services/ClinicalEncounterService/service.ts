@@ -1,5 +1,4 @@
 import request from "../../request";
-import qs from "qs";
 import { EncounterEndpoints } from "./config";
 import { ClinicalEncounter } from "../../../interfaces/ClinicalEncounter";
 
@@ -28,26 +27,25 @@ export default class EncounterService {
         return await request({
             url: EncounterEndpoints.post(),
             method: "POST",
-            data: qs.stringify(data),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            data: data,
+            headers: { "Content-Type": "application/json" }
         });
     };
 
-    public static put = async (data: ClinicalEncounter) => {
+    public static put = async (id: number, data: ClinicalEncounter) => {
         return await request({
-            url: EncounterEndpoints.put(),
-            method: "POST",
-            data: qs.stringify(data),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            url: EncounterEndpoints.put(id),
+            method: "PUT",
+            data: data,
+            headers: { "Content-Type": "application/json" }
         });
     };
 
     public static delete = async (id: number) => {
         return await request({
-            url: EncounterEndpoints.delete(),
-            method: "POST",
-            data: qs.stringify({ id : id}),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            url: EncounterEndpoints.delete(id),
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
         });
     };
 }
