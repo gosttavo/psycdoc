@@ -1,10 +1,10 @@
 import { formLoginSchema, FormLoginSchema } from "../schemas/formLoginSchema";
-import { useAuth } from '../contexts/AuthContext';
 import { useLogin } from "../hooks/useLogin";
 import { useToast } from "../contexts/ToastContext";
 import { Button, TextField, Typography } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
     const { login: loginToContext } = useAuth();
@@ -21,7 +21,6 @@ export default function Login() {
     
     const onSubmit = async (data: FormLoginSchema) => {
         try {
-            console.log(data);
             const result = await mutateAsync(data);
             
             if (result?.success) {
@@ -34,10 +33,16 @@ export default function Login() {
                     }
                 });
             } else {
-                showToast("Credenciais inválidas!", "error");
+                showToast(
+                    'Credenciais inválidas!',
+                    'error'
+                );
             }
         } catch (error) {
-            showToast("Erro ao realizar login, contate o suporte.", "error");
+            showToast(
+                'Erro ao realizar login, contate o suporte.',
+                'error'
+            );
             console.error(error);
         }
     };

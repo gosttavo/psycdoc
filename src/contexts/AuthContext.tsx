@@ -1,6 +1,5 @@
 import {
     createContext,
-    useContext,
     ReactNode,
     useState,
     useEffect,
@@ -18,7 +17,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
@@ -32,11 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (userData: AuthLoginResponse) => {
         try {
             const user = await AuthService.getUser(userData.data.id);
-            console.log("User data:", user);
             setUser(user);
             localStorage.setItem("user", JSON.stringify(user));
             navigate('/');
-            showToast(`Bem-vindo(a), ${user.name}!`, "success");
+            showToast(
+                `Bem-vindo(a), ${user.name}!`,
+                'success'
+            );
         } catch (err) {
             console.error("Failed to fetch user", err);
             logout();
@@ -59,13 +61,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
 }
   

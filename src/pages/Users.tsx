@@ -42,6 +42,8 @@ import {
     useGetUsers,
     useUpdateUser
 } from "../hooks/useUser";
+import { mapGender } from "../utils/utils";
+import { useToast } from "../contexts/ToastContext";
 
 interface ModalAction {
     row: User;
@@ -50,6 +52,7 @@ interface ModalAction {
 
 export default function Home() {
     const { isDarkMode } = useDarkMode();
+    const { showToast } = useToast();
 
     const [searchText, setSearchText] = useState<string>('');
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
@@ -107,30 +110,58 @@ export default function Home() {
     const onSubmitUser = (data: FormUserSchema) => {
         try {
             if (formModalType === 'create') {
-                createUser(data as User, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        userReset();
-                        refetch();
-                    },
-                    onError: (error) => {
-                        console.error("Error creating user:", error);
+                createUser(
+                    data as User,
+                        {
+                        onSuccess: () => {
+                            showToast(
+                                'Médico criado com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            userReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
                     }
-                });
-            } else {
-                updateUser({ id: selectedRow?.id ?? 0, user: data as User }, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        userReset();
-                        refetch();
+                );
+            };
+            
+            if (formModalType === 'edit') {
+                updateUser(
+                    {
+                        id: selectedRow?.id ?? 0,
+                        user: data as User
                     },
-                    onError: (error) => {
-                        console.error("Error updating user:", error);
+                    {
+                        onSuccess: () => {
+                            showToast(
+                                'Médico atualizado com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            userReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
                     }
-                });
-            }
+                );
+            };
         } catch (error) {
-            console.error("Unexpected error:", error);
+            showToast(
+                `Erro: ${error}`,
+                'error'
+            );
         }
     };
 
@@ -138,6 +169,10 @@ export default function Home() {
         if (selectedRow?.id) {
             deleteUser(selectedRow.id, {
                 onSuccess: () => {
+                    showToast(
+                        'Médico excluído com sucesso!',
+                        'success'
+                    );
                     setOpenDeleteModal(false);
                     refetch();
                 }
@@ -344,7 +379,7 @@ export default function Home() {
                                             {row?.document ?? '-'}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                            {row?.gender ?? '-'}
+                                            {mapGender(row?.gender) ?? '-'}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
                                             {moment(row.birthDate).format("DD/MM/YYYY")}

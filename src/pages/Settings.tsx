@@ -51,7 +51,7 @@ export default function Settings() {
             </div>
 
             <div className="flex flex-wrap gap-4 mb-4">   
-                <div className={`flex flex-col flex-1 min-w-[300px] h-full gap-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-6 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className={`flex flex-col flex-1 min-w-[300px] h-full gap-2 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl rounded-2xl p-6 mb-6 border`}>
                     <form
                         onSubmit={handleSubmit(async () => {
                             console.log('Form submitted');
@@ -201,7 +201,7 @@ export default function Settings() {
                     </form>
                 </div>
                 
-                <div className={`flex flex-col min-w-[300px] gap-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-6 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className={`flex flex-col min-w-[300px] gap-2 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl rounded-2xl p-6 mb-6 border`}>
                     <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         Tema
                     </h2>

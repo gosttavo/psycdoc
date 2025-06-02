@@ -23,6 +23,21 @@ export default class EncounterService {
         }
     };
 
+    public static open = async (id: number) => {
+        try {
+            const response = await request({
+                url: EncounterEndpoints.open(id),
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            return response?.data || { data: {}, success: true };
+        } catch (error) {
+            console.error("Error fetching encounters:", error);
+            throw error;
+        }
+    };
+
     public static post = async (data: ClinicalEncounter) => {
         return await request({
             url: EncounterEndpoints.post(),

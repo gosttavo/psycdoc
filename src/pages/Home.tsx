@@ -44,6 +44,8 @@ import {
     useGetEncounters,
     useUpdateEncounter
 } from "../hooks/useClinicalEncounter";
+import { mapEncounterStatus, mapPaidStatus } from "../utils/utils";
+import { useToast } from "../contexts/ToastContext";
 
 interface ModalAction {
     row: ClinicalEncounter;
@@ -53,6 +55,7 @@ interface ModalAction {
 export default function Home() {
     const { isDarkMode } = useDarkMode();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [searchText, setSearchText] = useState<string>('');
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
@@ -65,12 +68,8 @@ export default function Home() {
 
     const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters(searchText);
     const clinicalEncounters = encountersResponse || [];
-
     const slotProps = {
-        input: {
-            style: {
-                color: isDarkMode ? '#fff' : '#000',
-            },
+        input: { style: { color: isDarkMode ? '#fff' : '#000' }
         },
         root: {
             sx: {
@@ -79,20 +78,68 @@ export default function Home() {
                 },
                 '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': {
                     borderColor: isDarkMode ? '#555' : '#ccc',
-                },
+                }
             }
         }
-    }
+    };
 
-    // #region Form Handlers
+    const { mutate: createEncounter } = useCreateEncounter();
+    const { mutate: updateEncounter } = useUpdateEncounter();
+    const { mutate: deleteEncounter } = useDeleteEncounter();
+
+    // #region === INIT ENCOUNTER ===
 
     const {
-        reset: encounterReset,
-        handleSubmit: encounterSubmit,
-        register: encounterRegister
+        reset: initEncounterReset,
+        handleSubmit: initEncounterSubmit,
+        register: initEncounterRegister
     } = useForm<FormInitEncounterSchema>({
         resolver: zodResolver(formInitEncounterSchema)
     })
+
+    const onSubmitInitEncounter = (data: FormInitEncounterSchema) => {
+        try {
+            if (!selectedRow) {
+                throw new Error('Nenhuma consulta selecionada');
+            }
+
+            const clinicalEncounter: ClinicalEncounter = {
+                tenantId: data.tenantId,
+                userId: data.userId,
+                patientId: data.patientId,
+                status: data.status,
+                encounterDate: selectedRow?.encounterDate,
+                paid: 0
+            }
+
+            updateEncounter(
+                {
+                    id: selectedRow.id ??0,
+                    clinicalEncounter
+                },
+                {
+                    onSuccess: () => {
+                        navigate(`/${selectedRow.id}/clinicalEncounter`);
+                    },
+                    onError: (error) => {
+                        showToast(
+                            `Erro: ${error.message}`,
+                            'error'
+                        );
+                    }
+                }
+            );
+        } catch (error) {
+            showToast(
+                `Erro: ${error}`,
+                'error'
+            );
+        }
+    };
+
+    // #endregion
+
+    // #region === CLINICAL ENCOUNTER ===
     
     const {
         reset: clinicalEncounterReset,
@@ -104,6 +151,65 @@ export default function Home() {
         resolver: zodResolver(formClinicalEncounterSchema)
     })
 
+    const onSubmitClinicalEncounter = (data: FormClinicalEncounterSchema) => {
+        try {
+            if (formModalType === 'create') {
+                createEncounter(
+                    data as ClinicalEncounter,
+                    {
+                        onSuccess: () => {
+                            showToast(
+                                'Consulta criada com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            clinicalEncounterReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
+                    }
+                );
+            }
+
+            if (formModalType === 'edit') {
+                updateEncounter(
+                    {
+                        id: selectedRow?.id ?? 0,
+                        clinicalEncounter: data as ClinicalEncounter
+                    },
+                    {
+                        onSuccess: () => {
+                            showToast(
+                                'Consulta atualizada com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            clinicalEncounterReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
+                    }
+                );
+            }
+        } catch (error) {
+            console.error("Unexpected error:", error);
+        }
+    };
+
+    // #endregion
+
+    // #region === DELETE ENCOUNTER ===
+
     const {
         reset: deleteEncounterReset,
         handleSubmit: deleteEncounterSubmit,
@@ -112,44 +218,14 @@ export default function Home() {
         resolver: zodResolver(formDeleteEncounterSchema)
     })
 
-    const { mutate: createEncounter } = useCreateEncounter();
-    const { mutate: updateEncounter } = useUpdateEncounter();
-    const { mutate: deleteEncounter } = useDeleteEncounter();
-
-    const onSubmitClinicalEncounter = (data: FormClinicalEncounterSchema) => {
-        try {
-            if (formModalType === 'create') {
-                createEncounter(data as ClinicalEncounter, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        clinicalEncounterReset();
-                        refetch();
-                    },
-                    onError: (error) => {
-                        console.error("Error creating encounter:", error);
-                    }
-                });
-            } else {
-                updateEncounter({ id: selectedRow?.id ?? 0, clinicalEncounter: data as ClinicalEncounter }, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        clinicalEncounterReset();
-                        refetch();
-                    },
-                    onError: (error) => {
-                        console.error("Error updating encounter:", error);
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Unexpected error:", error);
-        }
-    };
-
     const onDeleteConfirm = () => {
         if (selectedRow?.id) {
             deleteEncounter(selectedRow.id, {
                 onSuccess: () => {
+                    showToast(
+                        'Consulta excluída com sucesso!',
+                        'success'
+                    );
                     setOpenDeleteModal(false);
                     refetch();
                 }
@@ -159,7 +235,7 @@ export default function Home() {
 
     // #endregion
 
-    // #region Dropdown Menu
+    // #region === DROPDOWN MENU E MODAL HANDLER ===
 
     const prevOpen = useRef(openMenuIndex !== null);
 
@@ -179,10 +255,6 @@ export default function Home() {
             setOpenMenuIndex(null);
         }
     };
-
-    // #endregion
-
-    // #region Modal Handlers
 
     const openModal = (type: ModalAction['type'], row?: ClinicalEncounter) => {
         handleClose();
@@ -226,13 +298,7 @@ export default function Home() {
 
     // #endregion
 
-    // #region Search Handler
-
-    const handleSearch = (text: string) => {
-        setSearchText(text);
-    };
-
-    // #endregion
+    const handleSearch = (text: string) => { setSearchText(text) };
 
     useEffect(() => {
         if (prevOpen.current && openMenuIndex === null) {
@@ -243,8 +309,8 @@ export default function Home() {
 
     useEffect(() => {
         if (selectedRow) {
-            encounterReset({
-                patient: selectedRow?.patient?.id ?? 0,
+            initEncounterReset({
+                patientId: selectedRow?.patient?.id ?? 0,
                 status: 2,
             });
 
@@ -265,7 +331,7 @@ export default function Home() {
                 gptResponse: selectedRow.gptResponse ?? '',
             });
         }
-    }, [selectedRow, encounterReset, deleteEncounterReset, clinicalEncounterReset]);
+    }, [selectedRow, initEncounterReset, deleteEncounterReset, clinicalEncounterReset]);
 
     return (
         <div className="container mx-auto">
@@ -350,10 +416,10 @@ export default function Home() {
                                             {moment(row.encounterDate).format("DD/MM/YYYY")}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                            {row.status}
+                                            {mapEncounterStatus(row?.status ?? 0)}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                            {row.paid}
+                                            {mapPaidStatus(row?.paid ?? 0)}
                                         </TableCell>
                                         <TableCell align="center">
                                             <Button
@@ -434,26 +500,50 @@ export default function Home() {
                 onClose={() => setOpenEncounterModal(false)}
                 title={`Iniciar a consulta de ${selectedRow?.patient?.name}?`}
             >
-                <form onSubmit={encounterSubmit((data) => {
-                    console.log("Iniciar consulta", selectedRow?.id, data);
-                    navigate(`/${selectedRow?.id}/clinicalEncounter`);
-                })}>
+                <form onSubmit={initEncounterSubmit(onSubmitInitEncounter)}>
                     <input
                         type="hidden"
-                        {...encounterRegister('patient')}
-                        value={selectedRow?.patientId ?? 0}
+                        {...initEncounterRegister('id', { valueAsNumber: true })}
+                        value={selectedRow?.id ?? 0}
                     />
+                    {errors.id && <p>{errors.id.message}</p>}
+
                     <input
                         type="hidden"
-                        {...encounterRegister('status')}
+                        {...initEncounterRegister('userId', { valueAsNumber: true })}
+                        value={selectedRow?.user?.id ?? 0}
+                    />
+                    {errors.userId && <p>{errors.userId.message}</p>}
+
+                    <input
+                        type="hidden"
+                        {...initEncounterRegister('tenantId', { valueAsNumber: true })}
+                        value={selectedRow?.tenantId ?? 0}
+                    />
+                    {errors.tenantId && <p>{errors.tenantId.message}</p>}
+
+                    <input
+                        type="hidden"
+                        {...initEncounterRegister('patientId', { valueAsNumber: true })}
+                        value={selectedRow?.patient?.id ?? 0}
+                    />
+                    {errors.patientId && <p>{errors.patientId.message}</p>}
+
+                    <input
+                        type="hidden"
+                        {...initEncounterRegister('status', { valueAsNumber: true })}
                         value={2}
                     />
-                    <Typography sx={{ mt: 2 }}>Você será redirecionado para outra página.</Typography>
+                    {errors.status && <p>{errors.status.message}</p>}
+
+                    <Typography sx={{ mt: 2 }}>
+                        Você será redirecionado para outra página.
+                    </Typography>
 
                     <div className="mt-4 flex justify-end gap-4">
                         <Button variant="outlined" type="reset" onClick={() => {
                             setOpenEncounterModal(false);
-                            encounterReset()
+                            initEncounterReset()
                         }}>
                             Cancelar
                         </Button>
@@ -482,7 +572,7 @@ export default function Home() {
                         <input
                             type="hidden"
                             {...clinicalEncounterRegister('tenantId', { valueAsNumber: true })}
-                            defaultValue={1}
+                            defaultValue={selectedRow?.tenantId ?? 1}
                         />
                         {errors.tenantId && <p>{errors.tenantId.message}</p>}
                         <MuiTextField
@@ -579,9 +669,10 @@ export default function Home() {
                                             label="Status"
                                         >
                                             <MenuItem value={0}>Agendado</MenuItem>
-                                            <MenuItem value={1}>Concluído</MenuItem>
-                                            <MenuItem value={2}>Cancelado</MenuItem>
-                                            <MenuItem value={3}>Faltante</MenuItem>
+                                            <MenuItem value={1}>Iniciado</MenuItem>
+                                            <MenuItem value={2}>Concluído</MenuItem>
+                                            <MenuItem value={3}>Cancelado</MenuItem>
+                                            <MenuItem value={4}>Faltante</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Box>

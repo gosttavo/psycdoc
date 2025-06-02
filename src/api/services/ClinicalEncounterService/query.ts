@@ -8,3 +8,10 @@ export const useGetEncountersQuery = (searchText?: string) => {
         queryFn: () => EncounterService.get(searchText)
     });
 };
+
+export const useOpenEncounterQuery = (id: number) => {
+    return useQuery<ClinicalEncounter, Error>({
+        queryKey: ['openEncounter', id],
+        queryFn: () => EncounterService.open(id)
+    });
+};

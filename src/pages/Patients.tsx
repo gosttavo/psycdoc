@@ -42,6 +42,8 @@ import {
     useGetPatients,
     useUpdatePatient
 } from "../hooks/usePatient";
+import { mapGender } from "../utils/utils";
+import { useToast } from "../contexts/ToastContext";
 
 interface ModalAction {
     row: Patient;
@@ -50,6 +52,7 @@ interface ModalAction {
 
 export default function Home() {
     const { isDarkMode } = useDarkMode();
+    const { showToast } = useToast();
 
     const [searchText, setSearchText] = useState<string>('');
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
@@ -107,30 +110,58 @@ export default function Home() {
     const onSubmitPatient = (data: FormPatientSchema) => {
         try {
             if (formModalType === 'create') {
-                createPatient(data as Patient, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        patientReset();
-                        refetch();
-                    },
-                    onError: (error) => {
-                        console.error("Error creating patient:", error);
+                createPatient(
+                    data as Patient,
+                    {
+                        onSuccess: () => {
+                            showToast(
+                                'Paciente criado com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            patientReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
                     }
-                });
-            } else {
-                updatePatient({ id: selectedRow?.id ?? 0, patient: data as Patient }, {
-                    onSuccess: () => {
-                        setOpenFormModal(false);
-                        patientReset();
-                        refetch();
+                );
+            };
+
+            if (formModalType === 'edit') {
+                updatePatient(
+                    {
+                        id: selectedRow?.id ?? 0,
+                        patient: data as Patient
                     },
-                    onError: (error) => {
-                        console.error("Error updating patient:", error);
+                    {
+                        onSuccess: () => {
+                            showToast(
+                                'Paciente atualizado com sucesso!',
+                                'success'
+                            );
+                            setOpenFormModal(false);
+                            patientReset();
+                            refetch();
+                        },
+                        onError: (error) => {
+                            showToast(
+                                `Erro: ${error.message}`,
+                                'error'
+                            );
+                        }
                     }
-                });
-            }
+                );
+            };
         } catch (error) {
-            console.error("Unexpected error:", error);
+            showToast(
+                `Erro: ${error}`,
+                'error'
+            );
         }
     };
 
@@ -138,6 +169,10 @@ export default function Home() {
         if (selectedRow?.id) {
             deletePatient(selectedRow.id, {
                 onSuccess: () => {
+                    showToast(
+                        'Paciente excluído com sucesso!',
+                        'success'
+                    );
                     setOpenDeleteModal(false);
                     refetch();
                 }
@@ -337,7 +372,7 @@ export default function Home() {
                                             {row?.document ?? '-'}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
-                                            {row?.gender ?? '-'}
+                                            {mapGender(row?.gender) ?? '-'}
                                         </TableCell>
                                         <TableCell align="left" style={{ color: isDarkMode ? '#e2e8f0' : '#1e2939' }}>
                                             {moment(row.birthDate).format("DD/MM/YYYY")}
