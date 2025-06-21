@@ -42,10 +42,13 @@ import {
     useCreateEncounter, 
     useDeleteEncounter, 
     useGetEncounters,
+    useInitEncounter,
     useUpdateEncounter
 } from "../hooks/useClinicalEncounter";
 import { mapEncounterStatus, mapPaidStatus } from "../utils/utils";
 import { useToast } from "../contexts/ToastContext";
+import { useGetPatients } from "../hooks/usePatient";
+import { useGetUsers } from "../hooks/useUser";
 
 interface ModalAction {
     row: ClinicalEncounter;
@@ -53,8 +56,8 @@ interface ModalAction {
 }
 
 export default function Home() {
-    const { isDarkMode } = useDarkMode();
     const navigate = useNavigate();
+    const { isDarkMode } = useDarkMode();
     const { showToast } = useToast();
 
     const [searchText, setSearchText] = useState<string>('');
@@ -66,7 +69,10 @@ export default function Home() {
     const [openEncounterModal, setOpenEncounterModal] = useState(false);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters(searchText);
+    const { data: encountersResponse, isLoading, isError, refetch } = useGetEncounters({searchText});
+    const { data: patients } = useGetPatients();
+    const { data: users } = useGetUsers();
+
     const clinicalEncounters = encountersResponse || [];
     const slotProps = {
         input: { style: { color: isDarkMode ? '#fff' : '#000' }
@@ -86,6 +92,7 @@ export default function Home() {
     const { mutate: createEncounter } = useCreateEncounter();
     const { mutate: updateEncounter } = useUpdateEncounter();
     const { mutate: deleteEncounter } = useDeleteEncounter();
+    const { mutate: initEncounter } = useInitEncounter();
 
     // #region === INIT ENCOUNTER ===
 
@@ -100,22 +107,13 @@ export default function Home() {
     const onSubmitInitEncounter = (data: FormInitEncounterSchema) => {
         try {
             if (!selectedRow) {
-                throw new Error('Nenhuma consulta selecionada');
+                throw Error('Nenhuma consulta selecionada!');
             }
 
-            const clinicalEncounter: ClinicalEncounter = {
-                tenantId: data.tenantId,
-                userId: data.userId,
-                patientId: data.patientId,
-                status: data.status,
-                encounterDate: selectedRow?.encounterDate,
-                paid: 0
-            }
-
-            updateEncounter(
+            initEncounter(
                 {
                     id: selectedRow.id ??0,
-                    clinicalEncounter
+                    tenantId: data.tenantId ?? 0
                 },
                 {
                     onSuccess: () => {
@@ -131,9 +129,9 @@ export default function Home() {
             );
         } catch (error) {
             showToast(
-                `Erro: ${error}`,
+                `Erro: ${error}`, 
                 'error'
-            );
+        );
         }
     };
 
@@ -309,10 +307,7 @@ export default function Home() {
 
     useEffect(() => {
         if (selectedRow) {
-            initEncounterReset({
-                patientId: selectedRow?.patient?.id ?? 0,
-                status: 2,
-            });
+            initEncounterReset();
 
             deleteEncounterReset({
                 id: selectedRow?.id ?? 0,
@@ -510,31 +505,10 @@ export default function Home() {
 
                     <input
                         type="hidden"
-                        {...initEncounterRegister('userId', { valueAsNumber: true })}
-                        value={selectedRow?.user?.id ?? 0}
-                    />
-                    {errors.userId && <p>{errors.userId.message}</p>}
-
-                    <input
-                        type="hidden"
                         {...initEncounterRegister('tenantId', { valueAsNumber: true })}
                         value={selectedRow?.tenantId ?? 0}
                     />
                     {errors.tenantId && <p>{errors.tenantId.message}</p>}
-
-                    <input
-                        type="hidden"
-                        {...initEncounterRegister('patientId', { valueAsNumber: true })}
-                        value={selectedRow?.patient?.id ?? 0}
-                    />
-                    {errors.patientId && <p>{errors.patientId.message}</p>}
-
-                    <input
-                        type="hidden"
-                        {...initEncounterRegister('status', { valueAsNumber: true })}
-                        value={2}
-                    />
-                    {errors.status && <p>{errors.status.message}</p>}
 
                     <Typography sx={{ mt: 2 }}>
                         Você será redirecionado para outra página.
@@ -559,7 +533,7 @@ export default function Home() {
                 open={openFormModal}
                 onClose={() => setOpenFormModal(false)}
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Consulta`}
-                width={1000}
+                width={750}
             >
                 <form onSubmit={clinicalEncounterSubmit(onSubmitClinicalEncounter)}>
                     <div className="grid grid-cols-12 gap-4">
@@ -575,28 +549,78 @@ export default function Home() {
                             defaultValue={selectedRow?.tenantId ?? 1}
                         />
                         {errors.tenantId && <p>{errors.tenantId.message}</p>}
-                        <MuiTextField
-                            label="Paciente"
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            {...clinicalEncounterRegister('patientId', { valueAsNumber: true })}
-                            defaultValue={selectedRow?.patientId ?? 0}
-                            slotProps={slotProps}
-                            size="small"
-                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        <Controller
+                            name="patientId"
+                            control={clinicalEncounterControl}
+                            render={({ field }) => (
+                                <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                    <FormControl fullWidth>
+                                        <InputLabel 
+                                            sx={{
+                                                transform: 'translate(14px, 8px) scale(1)',
+                                                '&.Mui-focused, &.MuiFormLabel-filled': {
+                                                transform: 'translate(14px, -9px) scale(0.75)'
+                                                }
+                                            }}
+                                            id="patientId"
+                                        >
+                                            Paciente
+                                        </InputLabel>
+                                        <Select
+                                            {...field}
+                                            size="small"
+                                            labelId="patientId"
+                                            id="patientId"
+                                            label="Paciente"
+                                        >
+                                            {
+                                                patients?.map((patient) => (
+                                                    <MenuItem key={patient.id} value={patient.id}>
+                                                        {patient.name} {patient.nameSecond}
+                                                    </MenuItem>
+                                                ))
+                                            }
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
                         />
                         {errors.patientId && <p>{errors.patientId.message}</p>}
-                        <MuiTextField
-                            label="Médico"
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            {...clinicalEncounterRegister('userId', { valueAsNumber: true }) }
-                            defaultValue={selectedRow?.userId ?? 0}
-                            slotProps={slotProps}
-                            size="small"
-                            className={`col-span-12 sm:col-span-6 rounded-md`}
+                        <Controller
+                            name="userId"
+                            control={clinicalEncounterControl}
+                            render={({ field }) => (
+                                <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                    <FormControl fullWidth>
+                                        <InputLabel 
+                                            sx={{
+                                                transform: 'translate(14px, 8px) scale(1)',
+                                                '&.Mui-focused, &.MuiFormLabel-filled': {
+                                                transform: 'translate(14px, -9px) scale(0.75)'
+                                                }
+                                            }}
+                                            id="patientId"
+                                        >
+                                            Médico
+                                        </InputLabel>
+                                        <Select
+                                            {...field}
+                                            size="small"
+                                            labelId="userId"
+                                            id="userId"
+                                            label="Médico"
+                                        >
+                                            {
+                                                users?.map((user) => (
+                                                    <MenuItem key={user.id} value={user.id}>
+                                                        {user.name} {user.nameSecond}
+                                                    </MenuItem>
+                                                ))
+                                            }
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
                         />
                         {errors.userId && <p>{errors.userId.message}</p>}
                         <MuiTextField
@@ -610,6 +634,7 @@ export default function Home() {
                             slotProps={slotProps}
                             size="small"
                             className={`col-span-12 sm:col-span-4 rounded-md`}
+                            InputLabelProps={{ shrink: true }}
                         />
                         {errors.encounterDate && <p>{errors.encounterDate.message}</p>}
                         <Controller

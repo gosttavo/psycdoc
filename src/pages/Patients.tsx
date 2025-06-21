@@ -28,7 +28,10 @@ import {
     PencilIcon,
     PlusIcon,
     XMarkIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    Bars4Icon,
+    EyeIcon,
+    ClipboardDocumentListIcon
 } from "@heroicons/react/24/outline";
 import { Controller, useForm } from "react-hook-form";
 import { formPatientSchema, FormPatientSchema, formDeletePatientSchema, FormDeletePatientSchema } from "../schemas/formPatientSchema";
@@ -42,25 +45,40 @@ import {
     useGetPatients,
     useUpdatePatient
 } from "../hooks/usePatient";
-import { mapGender } from "../utils/utils";
+import { mapEncounterStatus, mapGender } from "../utils/utils";
 import { useToast } from "../contexts/ToastContext";
+import { useGetEncounters } from "../hooks/useClinicalEncounter";
+import Card from "../components/Card";
+import { useNavigate } from "react-router";
+import ReportCard from "../components/ReportCard";
 
 interface ModalAction {
     row: Patient;
-    type: 'create' | 'edit' | 'delete';
+    type: 'create' | 'edit' | 'delete' | 'historic' | 'report';
 }
 
-export default function Home() {
+export default function Patients() {
+    const navigate = useNavigate();
     const { isDarkMode } = useDarkMode();
     const { showToast } = useToast();
 
-    const [searchText, setSearchText] = useState<string>('');
+    const [searchText, setSearchText] = useState<string>('');    
     const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [selectedRow, setSelectedRow] = useState<Patient | null>(null);
-    const [openFormModal, setOpenFormModal] = useState(false);
     const [formModalType, setFormModalType] = useState<'create' | 'edit'>('create');
+    const [openFormModal, setOpenFormModal] = useState(false);
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [openHistoricModal, setOpenHistoricModal] = useState(false);
+    const [openReportModal, setOpenReportModal] = useState(false);
+
+    const {
+        data: encounters,
+        refetch: fetchEncounters
+    } = useGetEncounters(
+        { patientId: selectedRow?.id ?? 0 },
+        { enabled: false }
+    );
 
     const { data: patientsResponse, isLoading, isError, refetch } = useGetPatients(searchText);
     const patients = patientsResponse || [];
@@ -241,6 +259,12 @@ export default function Home() {
             case 'delete':
                 setOpenDeleteModal(true);
                 break;
+            case 'historic':
+                setOpenHistoricModal(true);
+                break;
+            case 'report':
+                setOpenReportModal(true);
+                break;
             default:
                 break;
         }
@@ -285,6 +309,19 @@ export default function Home() {
             });
         }
     }, [selectedRow, patientReset, deletePatientReset]);
+
+    useEffect(() => {
+        if (openHistoricModal && selectedRow?.id) {
+            fetchEncounters();
+        }
+    }, [openHistoricModal, selectedRow, fetchEncounters]);
+
+    
+    // useEffect(() => {
+    //     if (openReportModal && selectedRow?.id) {
+    //         fetchReport();
+    //     }
+    // }, [openReportModal, selectedRow, fetchReport]);
 
     return (
         <div className="container mx-auto">
@@ -419,7 +456,13 @@ export default function Home() {
                                                                         <PencilIcon className="h-4 w-4 mr-2" /> Editar
                                                                     </MenuItem>
                                                                     <MenuItem onClick={() => openModal('delete', row)}>
-                                                                        <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
+                                                                        <XMarkIcon className="h-4 w-4 mr-2" /> Excluir
+                                                                    </MenuItem>
+                                                                    <MenuItem onClick={() => openModal('historic', row)}>
+                                                                        <ClipboardDocumentListIcon className="h-4 w-4 mr-2" /> Consultas
+                                                                    </MenuItem>
+                                                                    <MenuItem onClick={() => openModal('report', row)}>
+                                                                        <Bars4Icon className="h-4 w-4 mr-2" /> Gerar relatório
                                                                     </MenuItem>
                                                                 </MenuList>
                                                             </ClickAwayListener>
@@ -452,7 +495,7 @@ export default function Home() {
                 open={openFormModal}
                 onClose={() => setOpenFormModal(false)}
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Paciente`}
-                width={1000}
+                width={750}
             >
                 <form onSubmit={patientSubmit(onSubmitPatient)}>
                     <div className="grid grid-cols-12 gap-4">
@@ -539,6 +582,7 @@ export default function Home() {
                             slotProps={slotProps}
                             size="small"
                             className={`col-span-12 sm:col-span-4 rounded-md`}
+                            InputLabelProps={{ shrink: true }}
                         />
                         {errors.birthDate && <p>{errors.birthDate.message}</p>}
                         <MuiTextField
@@ -683,6 +727,68 @@ export default function Home() {
                         </div>
                     </form>
                 </div>
+            </ModalWrapper>
+            
+            {/* Modal de Histórico */}
+            <ModalWrapper
+                open={openHistoricModal}
+                onClose={() => setOpenHistoricModal(false)}
+                title="Histórico de Consultas"
+                width={750}
+            >
+                <div className="flex flex-col">
+                    {
+                        encounters?.map((encounter) => (
+                            <Card key={encounter.id}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <Box>
+                                        <div className="text-gray-700">
+                                            <p>Data: {moment(encounter.encounterDate).format('DD/MM/YYYY')}</p>
+                                            <p>Paciente: {encounter?.patient?.name}</p>
+                                            <p>Profissional: {encounter?.user?.name}</p>
+                                            <p>{mapEncounterStatus(encounter?.status ?? 0)}</p>
+                                        </div>
+                                    </Box>
+
+                                    <Box>
+                                        <Button
+                                            onClick={() => {
+                                                navigate(`/${encounter.id}/viewEncounter`);
+                                            }}
+                                            sx={{ minWidth: 'auto', p: 0 }}
+                                        >
+                                            <EyeIcon className={`h-4 w-4 mr-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-700'}`} />
+                                            Visualizar
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            </Card>
+                        ))
+                    }
+                    <div className="flex items-center mt-4">
+                        <Button
+                            variant="outlined"
+                            type="reset"
+                            onClick={() => setOpenHistoricModal(false)}
+                            className="mr-2"
+                        >
+                            Fechar
+                        </Button>
+                    </div>
+                </div>
+            </ModalWrapper>
+
+            {/* Modal de relatório */}
+            <ModalWrapper
+                title="Relatório do Paciente"
+                open={openReportModal}
+                onClose={() => setOpenReportModal(false)}
+                width={750}
+            >
+                <ReportCard
+                    patientId={selectedRow?.id ?? 0}
+                    onClose={() => setOpenReportModal(false) }
+                />
             </ModalWrapper>
         </div>
     );

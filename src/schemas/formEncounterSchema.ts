@@ -2,10 +2,7 @@ import {z} from 'zod';
 
 const formInitEncounterSchema = z.object({
     id: z.number().optional(),
-    tenantId: z.number(),
-    patientId: z.number(),
-    userId: z.number(),
-    status: z.number(),
+    tenantId: z.number()
 });
 
 type FormInitEncounterSchema = z.infer<typeof formInitEncounterSchema>;
@@ -32,10 +29,17 @@ const formDeleteEncounterSchema = z.object({
 type FormDeleteEncounterSchema = z.infer<typeof formDeleteEncounterSchema>;
 
 const formAiIntegrationSchema = z.object({
+    clinicalEncounterId: z.number().optional(),
     prompt: z.string().min(1, 'Prompt is required'),
 });
 
 type FormAiIntegrationSchema = z.infer<typeof formAiIntegrationSchema>;
+
+const formReportEncounterSchema = z.object({
+    patientId: z.number().min(1, 'Patient id is required'),
+});
+
+type FormReportEncounterSchema = z.infer<typeof formReportEncounterSchema>;
 
 export {
     formInitEncounterSchema, 
@@ -45,5 +49,7 @@ export {
     formDeleteEncounterSchema,
     type FormDeleteEncounterSchema,
     formAiIntegrationSchema,
-    type FormAiIntegrationSchema
+    type FormAiIntegrationSchema,
+    formReportEncounterSchema,
+    type FormReportEncounterSchema
 };

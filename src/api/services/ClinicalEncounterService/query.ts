@@ -2,10 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import EncounterService from "./service";
 import { ClinicalEncounter } from "../../../interfaces/ClinicalEncounter";
 
-export const useGetEncountersQuery = (searchText?: string) => {
+export const useGetEncountersQuery = (
+    { searchText, patientId }: { searchText?: string; patientId?: number },
+    options?: { enabled?: boolean }
+) => {
     return useQuery<ClinicalEncounter[], Error>({
-        queryKey: ['getEncounters', searchText],
-        queryFn: () => EncounterService.get(searchText)
+        queryKey: ['getEncounters', searchText, patientId],
+        queryFn: () => EncounterService.get({ searchText, patientId }),
+        enabled: options?.enabled ?? true
     });
 };
 

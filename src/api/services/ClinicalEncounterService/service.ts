@@ -3,10 +3,14 @@ import { EncounterEndpoints } from "./config";
 import { ClinicalEncounter } from "../../../interfaces/ClinicalEncounter";
 
 export default class EncounterService {
-    public static get = async (searchText?: string) => {
+    public static get = async ({ searchText, patientId }: { searchText?: string, patientId?: number }) => {
         const params = new URLSearchParams();
         if (searchText && searchText.trim() !== '') {
             params.append('search', searchText.trim());
+        }
+
+        if (patientId) {
+            params.append('patientId', patientId.toString());
         }
     
         try {
@@ -60,6 +64,15 @@ export default class EncounterService {
         return await request({
             url: EncounterEndpoints.delete(id),
             method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        });
+    };
+
+    public static initEncounter = async (id: number, tenantId: number) => {
+        return await request({
+            url: EncounterEndpoints.initEncounter(id),
+            method: "PUT",
+            data: { tenantId },
             headers: { "Content-Type": "application/json" }
         });
     };

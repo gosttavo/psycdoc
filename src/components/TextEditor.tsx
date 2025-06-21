@@ -36,9 +36,10 @@ const initialValue: Descendant[] = [
 interface TextEditorProps {
   value?: string | string[] | Descendant[];
   onChange?: (value: Descendant[]) => void;
+  disabled?: boolean;
 }
 
-const TextEditor = ({ value, onChange }: TextEditorProps) => {
+const TextEditor = ({ value, onChange, disabled = false }: TextEditorProps) => {
     const { isDarkMode } = useDarkMode();
     const editor = useMemo(() => withHistory(withReact(createEditor())), []);
     const [editorValue, setEditorValue] = useState<Descendant[]>(
@@ -69,6 +70,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     };
 
     const toggleFormat = (format: keyof CustomText) => {
+        if (disabled) return;
         const isActive = isFormatActive(format);
         Editor.addMark(editor, format, isActive ? null : true);
     };
@@ -112,6 +114,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     }, [isDarkMode]);
 
     const Toolbar = () => {
+        if (disabled) return null; // Oculta a toolbar quando disabled
+        
         return (
             <div className={`flex gap-2 p-2 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <FormatButton format="bold" icon="B" />
@@ -132,6 +136,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
                     toggleFormat(format);
                 }}
                 className={`p-2 rounded ${isActive ? (isDarkMode ? 'bg-blue-600' : 'bg-blue-500 text-white') : (isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100')}`}
+                disabled={disabled}
             >
                 {icon}
             </button>
@@ -141,21 +146,22 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     return (
         <Slate editor={editor} initialValue={editorValue} onChange={handleChange}>
             <Toolbar />
-                <Editable
-                    className="flex-1 p-4 overflow-y-auto"
-                    renderElement={renderElement}
-                    renderLeaf={renderLeaf}
-                    renderPlaceholder={(props) => (
-                        <span
-                            {...props.attributes}
-                            className="p-2 text-gray-500"
-                        >
-                            Comece a escrever aqui...
-                        </span>
-                    )}
-                    spellCheck
-                    autoFocus
-                />
+            <Editable
+                className={`flex-1 p-4 overflow-y-auto ${disabled ? (isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500') : ''}`}
+                renderElement={renderElement}
+                renderLeaf={renderLeaf}
+                renderPlaceholder={({ attributes }) => (
+                    <span
+                        {...attributes}
+                        className="p-2 text-gray-500"
+                    >
+                        Comece a escrever aqui...
+                    </span>
+                )}
+                spellCheck
+                autoFocus={!disabled}
+                readOnly={disabled}
+            />
         </Slate>
     );
 };

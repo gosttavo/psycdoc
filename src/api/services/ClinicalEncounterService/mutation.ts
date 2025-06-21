@@ -25,3 +25,11 @@ export const useDeleteEncounterMutation = () => {
       onError: (error) => { return error; }
   });
 };
+
+export const useInitEncounterMutation = () => {
+  return useMutation({
+    mutationFn: ({ id, tenantId }: { id: number; tenantId: number }) => EncounterService.initEncounter(id, tenantId),
+      onSuccess: (data) => { return data; },
+      onError: (error) => { return error; }
+  });
+};

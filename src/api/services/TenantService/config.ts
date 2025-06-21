@@ -1,4 +1,4 @@
 export const TenantEndpoints = {
-    get: () => "/tenant/search.php",
+    open: (id: number) => `/tenant/open_tenant.php/${id}`,
     put: (id: number) => `/tenant/update_tenant.php/${id}`,
 }

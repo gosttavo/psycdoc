@@ -13,7 +13,8 @@ import { IGemini } from "../interfaces/Gemini";
 import { useState } from "react";
 import { useToast } from "../contexts/ToastContext";
 
-export default function GeminiChat({
+export default function GeminiCard({
+    clinicalEncounterId,
     onClose
 }: IAICardChat) {
     const { showToast } = useToast();
@@ -24,39 +25,24 @@ export default function GeminiChat({
         reset,
         handleSubmit,
         register,
-        formState: { errors }
+        formState: {
+            errors,
+            isSubmitting
+        }
     } = useForm<FormAiIntegrationSchema>({
         resolver: zodResolver(formAiIntegrationSchema)
     });
 
-    const { mutate: createGemini } = useCreateGemini();
+    const { mutateAsync: createGemini } = useCreateGemini();
 
-    const onSubmitEncounter = (data: FormAiIntegrationSchema) => {
+    const onSubmitEncounter = async (data: FormAiIntegrationSchema) => {
         try {
-            createGemini(
-                data as IGemini,
-                {
-                    onSuccess: (data) => {
-                        showToast(
-                            'Integração com IA enviada com sucesso!',
-                            'success'
-                        );
-                        setAiResponse(data?.atividades as string[]);
-                    },
-                    onError: (error) => {
-                        showToast(
-                            `Erro: ${error.message}`,
-                            'error'
-                        );
-                    }
-                }
-            )
+            data.clinicalEncounterId = clinicalEncounterId;
+            const result = await createGemini(data as IGemini);
+            showToast('Integração com IA enviada com sucesso!', 'success');
+            setAiResponse(result?.atividades as string[]);
         } catch (error) {
-            console.error("Error submitting AI integration:", error);
-            showToast(
-                `Erro: ${error}`,
-                'error'
-            )
+            showToast(`Erro: ${error}`, 'error');
         }
     };
 
@@ -111,21 +97,36 @@ export default function GeminiChat({
                 />
             </div>
             <div className="mt-4 flex justify-end gap-4">
-                <Button
-                    variant="outlined"
-                    onClick={() => {
-                        reset();
-                        onClose();
-                    }}
-                >
-                    Cancelar
-                </Button>
-                <Button
-                    variant="contained"
-                    type="submit"
-                >
-                    Enviar
-                </Button>
+                {   
+                    aiResponse.length > 1 ? (
+                        <Button
+                            variant="outlined"
+                            onClick={() => { onClose() }}
+                        >
+                            Fechar
+                        </Button>
+                    ) : (
+                        <>
+                            <Button
+                                variant="outlined"
+                                disabled={isSubmitting}
+                                onClick={() => {
+                                    reset();
+                                    onClose();
+                                }}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                type="submit"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Salvando...' : 'Enviar'}
+                            </Button>
+                        </>
+                    )
+                }
             </div>
         </form>
     )

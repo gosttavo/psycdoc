@@ -17,6 +17,7 @@ const NotFound = React.lazy(() => import('./pages/NotFound'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const ClinicalEncounterPage = React.lazy(() => import('./pages/ClinicalEncouter'));
+const ViewEncounter = React.lazy(() => import('./pages/ViewEncounter'));
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
                         <Route path="/users" element={<Users />} />
                         <Route path="/patients" element={<Patients />} />
                         <Route path="/:id/clinicalEncounter" element={<ClinicalEncounterPage />} />
+                        <Route path="/:id/viewEncounter" element={<ViewEncounter />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/profile" element={<Profile />} />
                       </Route>

@@ -1,26 +1,45 @@
 
 import { useDarkMode } from "../hooks/useDarkMode";
-import { formTenantSchema, FormTenantSchema } from "../schemas/formTenantSchema";
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     TextField as MuiTextField,
     Button,
+    Box,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
+import { useAuth } from "../hooks/useAuth";
+import { useEffect } from "react";
+import { useOpenUser } from "../hooks/useUser";
+import { formUserSchema, FormUserSchema } from "../schemas/formUserSchema";
+import moment from "moment";
 
 export default function Settings() {
+    const { user } = useAuth();
     const { isDarkMode, toggleDarkMode } = useDarkMode();
-    const { reset, handleSubmit, control } = useForm<FormTenantSchema>({
-        resolver: zodResolver(formTenantSchema),
+    const {
+        reset,
+        handleSubmit,
+        register: userRegister,
+        control: userControl,
+        formState: { errors },
+    } = useForm<FormUserSchema>({
+        resolver: zodResolver(formUserSchema),
         defaultValues: {
-            description: '',
-            email: '',
-            addressLine1: '',
-            addressLine2: '',
-            addressCity: '',
-            addressZipCode: '',
+            name: '',
+            nameSecond: '',
+            nameCalledBy: '',
+            motherName: '',
             document: '',
-            phone: ''
+            documentCrp: '',
+            birthDate: '',
+            gender: 0,
+            phone: '',
+            email: '',
+            active: 0
         }
     });
 
@@ -42,6 +61,24 @@ export default function Settings() {
         }
     }
 
+    const { data } = useOpenUser(user?.id ?? 0);
+
+    useEffect(() => {
+        reset({
+            name: data?.name ?? '',
+            nameSecond: data?.nameSecond ?? '',
+            nameCalledBy: data?.nameCalledBy ?? '',
+            motherName: data?.motherName ?? '',
+            document: data?.document ?? '',
+            documentCrp: data?.documentCrp ?? '',
+            birthDate: data?.birthDate ?? '',
+            gender: data?.gender ?? 0,
+            phone: data?.phone ?? '',
+            email: data?.email ?? '',
+            active: data?.active ?? 0
+        })
+    }, [data, reset]);
+
     return (
         <div className="container mx-auto">
             <div className="flex justify-between items-center mb-4">
@@ -61,127 +98,207 @@ export default function Settings() {
                             <h2 className={`col-span-12 text-lg font-semibold ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
                                 Dados da clínica
                             </h2>
+                            <input
+                                type="hidden"
+                                {...userRegister('id', { valueAsNumber: true })}
+                                defaultValue={0}
+                            />
+                            {errors.id && <p>{errors.id.message}</p>}
+                            <input
+                                type="hidden"
+                                {...userRegister('tenantId', { valueAsNumber: true })}
+                                defaultValue={1}
+                            />
+                            {errors.tenantId && <p>{errors.tenantId.message}</p>}
+                            <MuiTextField
+                                label="Nome"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('name')}
+                                defaultValue={data?.name ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.name && <p>{errors.name.message}</p>}
+                            <MuiTextField
+                                label="Sobrenome"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('nameSecond')}
+                                defaultValue={data?.nameSecond ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.nameSecond && <p>{errors.nameSecond.message}</p>}
+                            <MuiTextField
+                                label="Nome social"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('nameCalledBy')}
+                                defaultValue={data?.nameCalledBy ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.nameCalledBy && <p>{errors.nameCalledBy.message}</p>}
+                            <MuiTextField
+                                label="Nome da mãe"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('motherName')}
+                                defaultValue={data?.motherName ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.motherName && <p>{errors.motherName.message}</p>}
+                            <MuiTextField
+                                label="CPF"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('document')}
+                                defaultValue={data?.document ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.document && <p>{errors.document.message}</p>}
+                            <MuiTextField
+                                label="CRP"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('documentCrp')}
+                                defaultValue={data?.documentCrp ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.documentCrp && <p>{errors.documentCrp.message}</p>}
+                            <MuiTextField
+                                type="date"
+                                label="Data de nascimento"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('birthDate')}
+                                defaultValue={data?.birthDate ? moment(data.birthDate).format('YYYY-MM-DD') : ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                            {errors.birthDate && <p>{errors.birthDate.message}</p>}
+                            <MuiTextField
+                                type="email"
+                                label="E-mail"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('email')}
+                                defaultValue={data?.email ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.email && <p>{errors.email.message}</p>}
+                            <MuiTextField
+                                type="password"
+                                label="Senha"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('password')}
+                                defaultValue={data?.email ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.password && <p>{errors.password.message}</p>}
+                            <MuiTextField
+                                label="Telefone"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                {...userRegister('phone')}
+                                defaultValue={data?.phone ?? ''}
+                                slotProps={slotProps}
+                                size="small"
+                                className={`col-span-12 sm:col-span-4 rounded-md`}
+                            />
+                            {errors.phone && <p>{errors.phone.message}</p>}
                             <Controller
-                                name="description"
-                                control={control}
+                                name="gender"
+                                control={userControl}
                                 render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="Clínica"
-                                        placeholder="Clínica"
-                                        className={`col-span-12 sm:col-span-4 rounded-md}`}
-                                        slotProps={slotProps}
-                                    />
+                                    <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                        <FormControl fullWidth>
+                                            <InputLabel
+                                            sx={{
+                                                transform: 'translate(14px, 8px) scale(1)',
+                                                '&.Mui-focused, &.MuiFormLabel-filled': {
+                                                transform: 'translate(14px, -9px) scale(0.75)'
+                                                }
+                                            }}
+                                            id="gender"
+                                            >
+                                                Gênero
+                                            </InputLabel>
+                                            <Select
+                                                {...field}
+                                                size="small"
+                                                labelId="gender"
+                                                id="gender"
+                                                label="Gênero"
+                                            >
+                                                <MenuItem value={0}>Masculino</MenuItem>
+                                                <MenuItem value={1}>Feminino</MenuItem>
+                                                <MenuItem value={2}>Outro</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
                                 )}
                             />
+                            {errors.active && <p>{errors.active.message}</p>}
                             <Controller
-                                name="email"
-                                control={control}
+                                name="active"
+                                control={userControl}
                                 render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="email"
-                                        label="Email"
-                                        placeholder="Email"
-                                        className={`col-span-12 sm:col-span-4 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
+                                    <Box className={`mt-4 col-span-12 sm:col-span-4 rounded-md`}>
+                                        <FormControl fullWidth>
+                                            <InputLabel
+                                            sx={{
+                                                transform: 'translate(14px, 8px) scale(1)',
+                                                '&.Mui-focused, &.MuiFormLabel-filled': {
+                                                transform: 'translate(14px, -9px) scale(0.75)'
+                                                }
+                                            }}
+                                            id="active"
+                                            >
+                                                Status
+                                            </InputLabel>
+                                            <Select
+                                                {...field}
+                                                size="small"
+                                                labelId="active"
+                                                id="active"
+                                                label="Ativo"
+                                            >
+                                                <MenuItem value={1}>Ativo</MenuItem>
+                                                <MenuItem value={0}>Inativo</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
                                 )}
                             />
-                            <Controller
-                                name="document"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="CNPJ"
-                                        placeholder="CNPJ"
-                                        className={`col-span-12 sm:col-span-4 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
-                            
-                            <Controller
-                                name="addressLine1"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="Endereço"
-                                        placeholder="Endereço"
-                                        className={`col-span-12 sm:col-span-3 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                name="addressLine2"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="Complemento"
-                                        placeholder="Complemento"
-                                        className={`col-span-12 sm:col-span-3 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                name="addressCity"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="Cidade"
-                                        placeholder="Cidade"
-                                        className={`col-span-12 sm:col-span-3 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                name="addressZipCode"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="CEP"
-                                        placeholder="CEP"
-                                        className={`col-span-12 sm:col-span-3 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
-                            <Controller
-                                name="phone"
-                                control={control}
-                                render={({ field }) => (
-                                    <MuiTextField
-                                        {...field}
-                                        size="small"
-                                        type="text"
-                                        label="Telefone"
-                                        placeholder="Telefone"
-                                        className={`col-span-12 sm:col-span-3 rounded-md`}
-                                        slotProps={slotProps}
-                                    />
-                                )}
-                            />
+                            {errors.active && <p>{errors.active.message}</p>}
                         </div>
                         <div className="mt-4 flex justify-end gap-4">
                             <Button

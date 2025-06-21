@@ -1,51 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
 import { useDarkMode } from "../hooks/useDarkMode";
 import TextEditor from "../components/TextEditor";
 import Card from "../components/Card";
-import { formClinicalEncounterSchema, FormClinicalEncounterSchema } from "../schemas/formEncounterSchema";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useOpenEncounter, useUpdateEncounter } from "../hooks/useClinicalEncounter";
-import { useNavigate, useParams } from "react-router-dom";
+import { useOpenEncounter } from "../hooks/useClinicalEncounter";
+import { useParams } from "react-router-dom";
 import { PlusCircleIcon } from "@heroicons/react/24/outline";
 import {
     Accordion,
     AccordionDetails,
-    AccordionSummary,    
-    Button,
+    AccordionSummary,
     TextField as MuiTextField,
+    TextareaAutosize,
     Typography
 } from "@mui/material";
-import ModalWrapper from "../components/Modal";
-import { Descendant, Text } from 'slate';
 import moment from "moment";
-import GeminiCard from "../components/GeminiCard";
-import { ClinicalEncounter } from "../interfaces/ClinicalEncounter";
 import { mapEncounterStatus, mapGender } from "../utils/utils";
+import { Descendant } from 'slate';
+import { useMemo } from 'react';
 
-const getPlainText = (value: Descendant[]): string => {
-  return value.map(n => {
-        if (Text.isText(n)) {
-            return n.text
-        };
-        if (n.children) {
-            return getPlainText(n.children)
-        };
-    return '';
-  }).join('\n');
-};
-
-export default function ClinicalEncounterPage() {
-    const navigate = useNavigate();
+export default function ViewEncounter() {
     const { isDarkMode } = useDarkMode();
     const { showToast } = useToast();
     const { id: encounterId } = useParams<{ id: string }>();
-
-    const [openFinishEncounterModal, setOpenFinishEncounterModal] = useState(false);
-    const [openAiChatModal, setOpenAiChatModal] = useState(false);
-
-    const [clinicalEncounterData, setClinicalEncounterData] = useState<ClinicalEncounter | null>(null);
 
     const slotProps = {
         input: {
@@ -92,15 +69,48 @@ export default function ClinicalEncounterPage() {
         borderStyle: 'solid'
     };
 
-    useEffect(() => {
-        showToast(
-            'Consulta iniciada!',
-            'success'
-        );
-    }, [showToast]);
+    const textareaStyles = {
+        backgroundColor: isDarkMode ? '#333' : '#fff',
+        color: isDarkMode ? '#fff' : '#000',
+        borderColor: isDarkMode ? '#555' : '#ccc',
+        borderRadius: '4px',
+        padding: '16.5px 14px',
+        fontFamily: 'inherit',
+        fontSize: '1rem',
+        minHeight: '100px',
+        width: '100%',
+        '&:focus': {
+            outline: 'none',
+            borderColor: isDarkMode ? '#90caf9' : '#1976d2',
+            borderWidth: '2px'
+        }
+    };
 
     const { data, isLoading, isError } = useOpenEncounter(encounterId ? Number(encounterId) : 0);
-    const { mutate: updateEncounter } = useUpdateEncounter();
+
+    const parsedContentHtml: Descendant[] = useMemo(() => {
+        const initialEditorValue: Descendant[] = [
+            {
+                type: 'paragraph',
+                children: [{ text: '' }],
+            }
+        ];
+
+        if (!data?.contentHtml) {
+            return initialEditorValue;
+        }
+
+        try {
+            const parsed = JSON.parse(data.contentHtml);
+            if (Array.isArray(parsed)) {
+                return parsed as Descendant[];
+            }
+        } catch (err) {
+            console.error('Erro ao fazer parse do contentHtml:', err);
+        }
+
+        return initialEditorValue;
+    }, [data?.contentHtml]);
 
     useEffect(() => {
         if (isLoading) {
@@ -116,127 +126,24 @@ export default function ClinicalEncounterPage() {
         }
     }, [isLoading, isError, showToast]);
 
-    const {
-        handleSubmit: clinicalEncounterSubmit,
-        register: clinicalEncounterRegister,
-        control: clinicalEncounterControl,
-        setValue: clinicalEncounterSetValue,
-        formState: { errors: clinicalEncounterErrors }
-    } = useForm<FormClinicalEncounterSchema>({
-        resolver: zodResolver(formClinicalEncounterSchema)
-    });
-
-    const onSubmitEncounter = (submitEncounter: FormClinicalEncounterSchema) => {
-        if (!data) {
-            showToast(
-                'Dados da consulta não encontrados',
-                'error'
-            );
-            return;
-        }
-
-        const clinicalEncounter: ClinicalEncounter = {
-            tenantId: data?.tenantId,
-            userId: data.userId,
-            patientId: data.patientId,
-            status: data.status,
-            encounterDate: data.encounterDate,
-            paid: 0,
-            contentHtml: submitEncounter.contentHtml,
-            contentText: submitEncounter.contentText,
-        }
-        setOpenFinishEncounterModal(true);
-        setClinicalEncounterData(clinicalEncounter);
-    };
-
-    const onSubmitFinishEncounter = () => {
-        try {
-            if (!data || !clinicalEncounterData) {
-                showToast(
-                    'Dados da consulta não encontrados',
-                    'error'
-                );
-                return;
-            }
-
-            const clinicalEncounter: ClinicalEncounter = {
-                tenantId: clinicalEncounterData?.tenantId,
-                userId: clinicalEncounterData.userId,
-                patientId: clinicalEncounterData.patientId,
-                status: 2,
-                encounterDate: clinicalEncounterData.encounterDate,
-                paid: 0,
-                contentHtml: clinicalEncounterData.contentHtml,
-                contentText: clinicalEncounterData.contentText,
-            };
-
-            updateEncounter(
-                {
-                    id: clinicalEncounter?.id ?? data?.id ?? 0,
-                    clinicalEncounter
-                },
-                {
-                    onSuccess: () => {
-                        showToast(
-                            'Consulta finalizada com sucesso!',
-                            'success'
-                        );
-
-                        setOpenFinishEncounterModal(false);
-                        setOpenAiChatModal(true);
-                    },
-                    onError: (error) => {
-                        showToast(
-                            `Erro: ${error.message}`, 
-                            'error'
-                        );
-                    }
-                }
-            );
-        } catch (error: Error | unknown) {
-            showToast(
-                `Erro: ${error}`, 
-                'error'
-            );
-        }
-    };
-
     return (
         <div className="container mx-auto">
             <div className="flex justify-between items-center mb-4">
                 <h1 className={`text-xl font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Consulta
+                   Visualizar Prontuário
                 </h1>
             </div>
 
-            <form
+            <div
                 className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"
-                onSubmit={clinicalEncounterSubmit(onSubmitEncounter)}
             >
                 <div className="col-span-2">
                     <Card customClass="h-screen">
                         <p>Prontuário</p>
-                        <input
-                            type="hidden"
-                            {...clinicalEncounterRegister('tenantId', { valueAsNumber: true })}
-                            defaultValue={1}
+                        <TextEditor
+                            disabled={true}
+                            value={parsedContentHtml}
                         />
-                        {clinicalEncounterErrors.tenantId && <p>{clinicalEncounterErrors.tenantId.message}</p>}
-                        <Controller
-                            name="contentHtml"
-                            control={clinicalEncounterControl}
-                            defaultValue={data?.contentHtml}
-                            render={({ field }) => (
-                                <TextEditor
-                                    value={field?.value}
-                                    onChange={(richContent) => {
-                                        clinicalEncounterSetValue('contentHtml', JSON.stringify(richContent));
-                                        clinicalEncounterSetValue('contentText', getPlainText(richContent));
-                                    }}
-                                />
-                            )}
-                        />
-                        {clinicalEncounterErrors.contentHtml && <p>{clinicalEncounterErrors.contentHtml.message}</p>}
                     </Card>
                 </div>
                 <div className="col-span-1">
@@ -258,28 +165,20 @@ export default function ClinicalEncounterPage() {
                         <div className="grid grid-cols-12 gap-4 p-1">
                             <input
                                 type="hidden"
-                                {...clinicalEncounterRegister('userId', { valueAsNumber: true })}
                                 value={data?.userId ?? 0}
                             />
-                            {clinicalEncounterErrors.userId && <p>{clinicalEncounterErrors.userId.message}</p>}
                             <input
                                 type="hidden"
-                                {...clinicalEncounterRegister('id', { valueAsNumber: true })}
                                 value={data?.id ?? 0}
                             />
-                            {clinicalEncounterErrors.id && <p>{clinicalEncounterErrors.id.message}</p>}
                             <input
                                 type="hidden"
-                                {...clinicalEncounterRegister('status', { valueAsNumber: true })}
                                 value={data?.status ?? 0}
                             />
-                            {clinicalEncounterErrors.status && <p>{clinicalEncounterErrors.status.message}</p>}
                             <input
                                 type="hidden"
-                                {...clinicalEncounterRegister('patientId', { valueAsNumber: true })}
                                 value={data?.patientId ?? 0}
                             />
-                            {clinicalEncounterErrors.patientId && <p>{clinicalEncounterErrors.patientId.message}</p>}
                             <MuiTextField
                                 label="Paciente"
                                 disabled
@@ -312,21 +211,12 @@ export default function ClinicalEncounterPage() {
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
-                                {...clinicalEncounterRegister('encounterDate')}
                                 defaultValue={data?.encounterDate ? moment(data?.encounterDate).format('YYYY-MM-DD') : ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-6 rounded-md`}
                                 InputLabelProps={{ shrink: true }}
                             />
-                            {clinicalEncounterErrors.encounterDate && <p>{clinicalEncounterErrors.encounterDate.message}</p>}
-                            <Button
-                                className="col-span-12"
-                                variant="contained"
-                                type="submit"
-                            >
-                                Finalizar consulta
-                            </Button>
                         </div>
                     </Card>
 
@@ -354,11 +244,7 @@ export default function ClinicalEncounterPage() {
                             }
                             aria-controls="panel1-content"
                             id="panel1-header"
-                            sx={{
-                                '& .MuiAccordionSummary-expandIconWrapper': {
-                                    color: isDarkMode ? '#60a5fa' : '#2563eb'
-                                }
-                            }}
+                            sx={{ '& .MuiAccordionSummary-expandIconWrapper': { color: isDarkMode ? '#60a5fa' : '#2563eb' }}}
                         >
                             <Typography sx={{
                                 color: isDarkMode ? '#f3f4f6' : '#111827',
@@ -416,51 +302,60 @@ export default function ClinicalEncounterPage() {
                             </div>
                         </AccordionDetails>
                     </Accordion>
-                </div>
-            </form>
 
-            
-            {/* Modal de Finalizar Consulta */}
-            <ModalWrapper
-                open={openFinishEncounterModal}
-                onClose={() => setOpenFinishEncounterModal(false)}
-                title={`Deseja finalizar a consulta de ${data?.patient?.name}?`}
-            >
-                <Typography sx={{ mt: 2 }}>Você não poderá desfazer essa ação.</Typography>
-                <div className="mt-4 flex justify-end gap-4">
-                    <Button
-                        variant="outlined"
-                        type="reset"
-                        onClick={() => {
-                            setOpenFinishEncounterModal(false);
-                            navigate(`/`);
+                    <Accordion
+                        sx={{ 
+                            ...cardStyles,
+                            '&.MuiAccordion-root': {
+                                boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                                borderRadius: '1rem',
+                                border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
+                                overflow: 'hidden',
+                                marginBottom: '1.5rem',
+                                backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
+                            },
+                            '&.MuiAccordion-root:before': {
+                                display: 'none'
+                            }
                         }}
                     >
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => { onSubmitFinishEncounter() }}
-                    >
-                        Finalizar
-                    </Button>
+                        <AccordionSummary
+                            expandIcon={
+                                <PlusCircleIcon 
+                                    className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} 
+                                />
+                            }
+                            aria-controls="panel1-content"
+                            id="panel1-header"
+                            sx={{ '& .MuiAccordionSummary-expandIconWrapper': {color: isDarkMode ? '#60a5fa' : '#2563eb' }}}
+                        >
+                            <Typography sx={{
+                                color: isDarkMode ? '#f3f4f6' : '#111827',
+                                fontWeight: 'bold'
+                            }}>
+                                Resposta do Gemini
+                            </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ padding: 1 }}>
+                            <div className="grid grid-cols-12 gap-4">
+                                <TextareaAutosize
+                                    value={
+                                        Array.isArray(data?.gptResponse)
+                                            ? data.gptResponse.join('\n')
+                                            : (data?.gptResponse ?? '')
+                                    }
+                                    style={{
+                                        ...textareaStyles,
+                                        backgroundColor: isDarkMode ? '#424242' : '#f5f5f5'
+                                    }}
+                                    className="col-span-12 sm:col-span-12"
+                                    readOnly
+                                />
+                            </div>
+                        </AccordionDetails>
+                    </Accordion>
                 </div>
-            </ModalWrapper>
-
-            {/* Modal de AI */}
-            <ModalWrapper
-                title="Fale com o gemini"
-                open={openAiChatModal}
-                onClose={() => setOpenAiChatModal(false)}
-            >
-                <GeminiCard
-                    clinicalEncounterId={data?.id ?? 0}
-                    onClose={() => {
-                        setOpenAiChatModal(false);
-                        navigate(`/`);
-                    }}
-                />
-            </ModalWrapper>
+            </div>
         </div>
     );
 }

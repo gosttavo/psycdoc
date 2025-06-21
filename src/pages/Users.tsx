@@ -426,7 +426,7 @@ export default function Home() {
                                                                         <PencilIcon className="h-4 w-4 mr-2" /> Editar
                                                                     </MenuItem>
                                                                     <MenuItem onClick={() => openModal('delete', row)}>
-                                                                        <XMarkIcon className="h-4 w-4 mr-2" /> Cancelar
+                                                                        <XMarkIcon className="h-4 w-4 mr-2" /> Excluir
                                                                     </MenuItem>
                                                                 </MenuList>
                                                             </ClickAwayListener>
@@ -459,7 +459,7 @@ export default function Home() {
                 open={openFormModal}
                 onClose={() => setOpenFormModal(false)}
                 title={`${formModalType === 'create' ? 'Criar' : 'Editar'} Médico`}
-                width={1000}
+                width={750}
             >
                 <form onSubmit={userSubmit(onSubmitUser)}>
                     <div className="grid grid-cols-12 gap-4">
@@ -558,6 +558,7 @@ export default function Home() {
                             slotProps={slotProps}
                             size="small"
                             className={`col-span-12 sm:col-span-4 rounded-md`}
+                            InputLabelProps={{ shrink: true }}
                         />
                         {errors.birthDate && <p>{errors.birthDate.message}</p>}
                         <MuiTextField

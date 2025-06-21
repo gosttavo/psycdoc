@@ -23,6 +23,21 @@ export default class UserService {
         }
     };
 
+    public static open = async (id: number) => {
+        try {
+            const response = await request({
+                url: UserEndpoints.open(id),
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+
+            return response?.data || { data: {}, success: true };
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            throw error;
+        }
+    };
+
     public static post = async (data: User) => {
         return await request({
             url: UserEndpoints.post(),

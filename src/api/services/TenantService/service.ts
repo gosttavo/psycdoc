@@ -3,22 +3,17 @@ import { TenantEndpoints } from "./config";
 import { Tenant } from "../../../interfaces/Tenant";
 
 export default class TenantService {
-    public static get = async (searchText?: string) => {
-        const params = new URLSearchParams();
-        if (searchText && searchText.trim() !== '') {
-            params.append('search', searchText.trim());
-        }
-    
+    public static open = async (id: number) => {
         try {
             const response = await request({
-                url: `${TenantEndpoints.get()}?${params.toString()}`,
+                url: TenantEndpoints.open(id),
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
             });
-    
-            return response?.data || { data: [], count: 0, success: true };
+
+            return response?.data || { data: {}, success: true };
         } catch (error) {
-            console.error("Error fetching users:", error);
+            console.error("Error fetching encounters:", error);
             throw error;
         }
     };

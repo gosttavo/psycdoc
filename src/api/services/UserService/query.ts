@@ -8,3 +8,10 @@ export const useGetUsersQuery = (searchText?: string) => {
         queryFn: () => UserService.get(searchText)
     });
 };
+
+export const useOpenUserQuery = (id: number) => {
+    return useQuery<User, Error>({
+        queryKey: ['openUser', id],
+        queryFn: () => UserService.open(id)
+    });
+};

@@ -19,5 +19,11 @@ export interface ClinicalEncounter {
 }
 
 export interface IAICardChat {
+  clinicalEncounterId: number;
+  onClose: () => void;
+}
+
+export interface IReportCard {
+  patientId: number;
   onClose: () => void;
 }

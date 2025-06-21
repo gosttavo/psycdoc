@@ -31,6 +31,8 @@ export default function ModalWrapper({
         borderRadius: '8px',
         width,
         height,
+        maxHeight: '90vh', // Limite a altura máxima
+        overflowY: 'auto',  // Permite rolagem se ultrapassar
         backgroundColor: isDarkMode ? '#1e2939' : 'white',
         color: isDarkMode ? '#e2e8f0' : '#1e2939',
     };
