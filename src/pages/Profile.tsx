@@ -1,4 +1,3 @@
-
 import { useDarkMode } from "../hooks/useDarkMode";
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,12 +12,15 @@ import {
 } from '@mui/material';
 import { useAuth } from "../hooks/useAuth";
 import { useEffect } from "react";
-import { useOpenUser } from "../hooks/useUser";
 import { formUserSchema, FormUserSchema } from "../schemas/formUserSchema";
 import moment from "moment";
+import { useUpdateUser } from "../hooks/useUser";
+import { useToast } from "../contexts/ToastContext";
+import { User } from "../interfaces/User";
 
 export default function Settings() {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const { isDarkMode, toggleDarkMode } = useDarkMode();
     const {
         reset,
@@ -43,6 +45,8 @@ export default function Settings() {
         }
     });
 
+    const { mutate: updateUser } = useUpdateUser();
+
     const slotProps = {
         input: {
             style: {
@@ -59,25 +63,60 @@ export default function Settings() {
                 },
             }
         }
-    }
+    };
 
-    const { data } = useOpenUser(user?.id ?? 0);
+    const onSubmitProfile = (data: FormUserSchema) => {
+        try {
+            if ('password' in data) {
+                delete (data as User).password;
+            }
+
+            updateUser(
+                {
+                    id: user?.id ?? 0,
+                    user: data as User
+                },
+                {
+                    onSuccess: () => {
+                        showToast(
+                            'Médico atualizado com sucesso!',
+                            'success'
+                        );
+                        reset();
+                    },
+                    onError: (error) => {
+                        showToast(
+                            `Erro: ${error.message}`,
+                            'error'
+                        );
+                    }
+                }
+            );
+        } catch (error) {
+            showToast(
+                `Erro: ${error}`,
+                'error'
+            );
+        }
+    }
 
     useEffect(() => {
         reset({
-            name: data?.name ?? '',
-            nameSecond: data?.nameSecond ?? '',
-            nameCalledBy: data?.nameCalledBy ?? '',
-            motherName: data?.motherName ?? '',
-            document: data?.document ?? '',
-            documentCrp: data?.documentCrp ?? '',
-            birthDate: data?.birthDate ?? '',
-            gender: data?.gender ?? 0,
-            phone: data?.phone ?? '',
-            email: data?.email ?? '',
-            active: data?.active ?? 0
+            id: user?.id ?? 0,
+            tenantId: user?.tenantId ?? 0,
+            name: user?.name ?? '',
+            nameSecond: user?.nameSecond ?? '',
+            nameCalledBy: user?.nameCalledBy ?? '',
+            motherName: user?.motherName ?? '',
+            document: user?.document ?? '',
+            documentCrp: user?.documentCrp ?? '',
+            birthDate: user?.birthDate ?? '',
+            gender: user?.gender ?? 0,
+            phone: user?.phone ?? '',
+            email: user?.email ?? '',
+            active: user?.active ?? 0
         })
-    }, [data, reset]);
+    }, [user, reset]);
 
     return (
         <div className="container mx-auto">
@@ -90,9 +129,7 @@ export default function Settings() {
             <div className="flex flex-wrap gap-4 mb-4">   
                 <div className={`flex flex-col flex-1 min-w-[300px] h-full gap-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-xl rounded-2xl p-6 mb-6 border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                     <form
-                        onSubmit={handleSubmit(async () => {
-                            console.log('Form submitted');
-                        })}
+                        onSubmit={handleSubmit(onSubmitProfile)}
                     >
                         <div className="grid grid-cols-12 gap-4">
                             <h2 className={`col-span-12 text-lg font-semibold ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
@@ -101,101 +138,101 @@ export default function Settings() {
                             <input
                                 type="hidden"
                                 {...userRegister('id', { valueAsNumber: true })}
-                                defaultValue={0}
+                                defaultValue={user?.id}
                             />
-                            {errors.id && <p>{errors.id.message}</p>}
+                            {errors.id && <p> id {errors.id.message}</p>}
                             <input
                                 type="hidden"
                                 {...userRegister('tenantId', { valueAsNumber: true })}
-                                defaultValue={1}
+                                defaultValue={user?.tenantId}
                             />
-                            {errors.tenantId && <p>{errors.tenantId.message}</p>}
+                            {errors.tenantId && <p> tenantId {errors.tenantId.message}</p>}
                             <MuiTextField
                                 label="Nome"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('name')}
-                                defaultValue={data?.name ?? ''}
+                                defaultValue={user?.name ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.name && <p>{errors.name.message}</p>}
+                            {errors.name && <p> name {errors.name.message}</p>}
                             <MuiTextField
                                 label="Sobrenome"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('nameSecond')}
-                                defaultValue={data?.nameSecond ?? ''}
+                                defaultValue={user?.nameSecond ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.nameSecond && <p>{errors.nameSecond.message}</p>}
+                            {errors.nameSecond && <p> nameSecond {errors.nameSecond.message}</p>}
                             <MuiTextField
                                 label="Nome social"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('nameCalledBy')}
-                                defaultValue={data?.nameCalledBy ?? ''}
+                                defaultValue={user?.nameCalledBy ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.nameCalledBy && <p>{errors.nameCalledBy.message}</p>}
+                            {errors.nameCalledBy && <p> nameCalledBy {errors.nameCalledBy.message}</p>}
                             <MuiTextField
                                 label="Nome da mãe"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('motherName')}
-                                defaultValue={data?.motherName ?? ''}
+                                defaultValue={user?.motherName ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.motherName && <p>{errors.motherName.message}</p>}
+                            {errors.motherName && <p> motherName {errors.motherName.message}</p>}
                             <MuiTextField
                                 label="CPF"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('document')}
-                                defaultValue={data?.document ?? ''}
+                                defaultValue={user?.document ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.document && <p>{errors.document.message}</p>}
+                            {errors.document && <p> document {errors.document.message}</p>}
                             <MuiTextField
                                 label="CRP"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('documentCrp')}
-                                defaultValue={data?.documentCrp ?? ''}
+                                defaultValue={user?.documentCrp ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.documentCrp && <p>{errors.documentCrp.message}</p>}
+                            {errors.documentCrp && <p> documentCrp {errors.documentCrp.message}</p>}
                             <MuiTextField
                                 type="date"
-                                label="Data de nascimento"
+                                label="user de nascimento"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('birthDate')}
-                                defaultValue={data?.birthDate ? moment(data.birthDate).format('YYYY-MM-DD') : ''}
+                                defaultValue={user?.birthDate ? moment(user.birthDate).format('YYYY-MM-DD') : ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                                 InputLabelProps={{ shrink: true }}
                             />
-                            {errors.birthDate && <p>{errors.birthDate.message}</p>}
+                            {errors.birthDate && <p> birthDate {errors.birthDate.message}</p>}
                             <MuiTextField
                                 type="email"
                                 label="E-mail"
@@ -203,37 +240,24 @@ export default function Settings() {
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('email')}
-                                defaultValue={data?.email ?? ''}
+                                defaultValue={user?.email ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.email && <p>{errors.email.message}</p>}
-                            <MuiTextField
-                                type="password"
-                                label="Senha"
-                                variant="outlined"
-                                fullWidth
-                                margin="normal"
-                                {...userRegister('password')}
-                                defaultValue={data?.email ?? ''}
-                                slotProps={slotProps}
-                                size="small"
-                                className={`col-span-12 sm:col-span-4 rounded-md`}
-                            />
-                            {errors.password && <p>{errors.password.message}</p>}
+                            {errors.email && <p> email {errors.email.message}</p>}
                             <MuiTextField
                                 label="Telefone"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
                                 {...userRegister('phone')}
-                                defaultValue={data?.phone ?? ''}
+                                defaultValue={user?.phone ?? ''}
                                 slotProps={slotProps}
                                 size="small"
                                 className={`col-span-12 sm:col-span-4 rounded-md`}
                             />
-                            {errors.phone && <p>{errors.phone.message}</p>}
+                            {errors.phone && <p> phone {errors.phone.message}</p>}
                             <Controller
                                 name="gender"
                                 control={userControl}

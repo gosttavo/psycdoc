@@ -787,6 +787,7 @@ export default function Patients() {
             >
                 <ReportCard
                     patientId={selectedRow?.id ?? 0}
+                    patient={selectedRow ?? undefined}
                     onClose={() => setOpenReportModal(false) }
                 />
             </ModalWrapper>

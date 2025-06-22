@@ -1,5 +1,6 @@
 import {
     useCreateEncounterMutation,
+    useCreateReportEncounterMutation,
     useDeleteEncounterMutation,
     useInitEncounterMutation,
     useUpdateEncounterMutation
@@ -18,3 +19,4 @@ export const useCreateEncounter = () => useCreateEncounterMutation();
 export const useUpdateEncounter = () => useUpdateEncounterMutation();
 export const useDeleteEncounter = () => useDeleteEncounterMutation();
 export const useInitEncounter = () => useInitEncounterMutation();
+export const useCreateReportEncounter = () => useCreateReportEncounterMutation();

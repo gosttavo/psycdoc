@@ -1,6 +1,7 @@
 import {z} from 'zod';
 
 const formTenantSchema = z.object({
+    id: z.number().optional(),
     description: z
         .string()
         .min(1, 'Description is required')

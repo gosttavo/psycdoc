@@ -1,4 +1,3 @@
-
 import { useDarkMode } from "../hooks/useDarkMode";
 import { formTenantSchema, FormTenantSchema } from "../schemas/formTenantSchema";
 import { useForm, Controller } from 'react-hook-form';
@@ -7,14 +6,23 @@ import {
     TextField as MuiTextField,
     Button,
 } from '@mui/material';
-import { useOpenTenant } from "../hooks/useTenant";
+import { useOpenTenant, useUpdateTenant } from "../hooks/useTenant";
 import { useAuth } from "../hooks/useAuth";
 import { useEffect } from "react";
+import { Tenant } from "../interfaces/Tenant";
+import { useToast } from "../contexts/ToastContext";
 
 export default function Settings() {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const { isDarkMode } = useDarkMode();
-    const { reset, handleSubmit, control } = useForm<FormTenantSchema>({
+    const {
+        reset,
+        register,
+        handleSubmit,
+        control,
+        formState: { errors }
+    } = useForm<FormTenantSchema>({
         resolver: zodResolver(formTenantSchema),
         defaultValues: {
             description: '',
@@ -27,6 +35,8 @@ export default function Settings() {
             phone: ''
         }
     });
+
+    const { mutate: updateTenant } = useUpdateTenant();
 
     const slotProps = {
         input: {
@@ -44,9 +54,40 @@ export default function Settings() {
                 },
             }
         }
-    }
+    };
 
     const { data } = useOpenTenant(user?.tenantId ?? 0);
+
+    const onSubmitTenant = (data: FormTenantSchema) => {
+        try {
+            updateTenant(
+                {
+                    id: user?.tenantId ?? 0,
+                    tenant: data as Tenant
+                },
+                {
+                    onSuccess: () => {
+                        showToast(
+                            'Médico atualizado com sucesso!',
+                            'success'
+                        );
+                        reset();
+                    },
+                    onError: (error) => {
+                        showToast(
+                            `Erro: ${error.message}`,
+                            'error'
+                        );
+                    }
+                }
+            );
+        } catch (error) {
+            showToast(
+                `Erro: ${error}`,
+                'error'
+            );
+        }
+    }
 
     useEffect(() => {
         reset({
@@ -71,14 +112,18 @@ export default function Settings() {
             <div className="flex flex-wrap gap-4 mb-4">   
                 <div className={`flex flex-col flex-1 min-w-[300px] h-full gap-2 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-xl rounded-2xl p-6 mb-6 border`}>
                     <form
-                        onSubmit={handleSubmit(async () => {
-                            console.log('Form submitted');
-                        })}
+                        onSubmit={handleSubmit(onSubmitTenant)}
                     >
                         <div className="grid grid-cols-12 gap-4">
                             <h2 className={`col-span-12 text-lg font-semibold ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
                                 Dados da clínica
                             </h2>
+                            <input
+                                type="hidden"
+                                {...register('id', { valueAsNumber: true })}
+                                defaultValue={user?.id}
+                            />
+                            {errors.id && <p> id {errors.id.message}</p>}
                             <Controller
                                 name="description"
                                 control={control}
@@ -94,6 +139,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.description && <p> description {errors.description.message}</p>}
                             <Controller
                                 name="email"
                                 control={control}
@@ -109,6 +155,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.email && <p> email {errors.email.message}</p>}
                             <Controller
                                 name="document"
                                 control={control}
@@ -124,7 +171,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
-                            
+                            {errors.document && <p> document {errors.document.message}</p>}
                             <Controller
                                 name="addressLine1"
                                 control={control}
@@ -140,6 +187,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.addressLine1 && <p> addressLine1 {errors.addressLine1.message}</p>}
                             <Controller
                                 name="addressLine2"
                                 control={control}
@@ -155,6 +203,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.addressLine2 && <p> addressLine2 {errors.addressLine2.message}</p>}
                             <Controller
                                 name="addressCity"
                                 control={control}
@@ -170,6 +219,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.addressCity && <p> addressCity {errors.addressCity.message}</p>}
                             <Controller
                                 name="addressZipCode"
                                 control={control}
@@ -185,6 +235,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.addressZipCode && <p> addressZipCode {errors.addressZipCode.message}</p>}
                             <Controller
                                 name="phone"
                                 control={control}
@@ -200,6 +251,7 @@ export default function Settings() {
                                     />
                                 )}
                             />
+                            {errors.phone && <p> phone {errors.phone.message}</p>}
                         </div>
                         <div className="mt-4 flex justify-end gap-4">
                             <Button

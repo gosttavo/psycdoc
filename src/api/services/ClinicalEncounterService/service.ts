@@ -1,6 +1,7 @@
 import request from "../../request";
 import { EncounterEndpoints } from "./config";
 import { ClinicalEncounter } from "../../../interfaces/ClinicalEncounter";
+import { IReportEncounter } from "../../../interfaces/Gemini";
 
 export default class EncounterService {
     public static get = async ({ searchText, patientId }: { searchText?: string, patientId?: number }) => {
@@ -73,6 +74,16 @@ export default class EncounterService {
             url: EncounterEndpoints.initEncounter(id),
             method: "PUT",
             data: { tenantId },
+            headers: { "Content-Type": "application/json" }
+        });
+    };
+
+    
+    public static report = async (data: IReportEncounter) => {
+        return await request({
+            url: EncounterEndpoints.report(),
+            method: "POST",
+            data: data,
             headers: { "Content-Type": "application/json" }
         });
     };

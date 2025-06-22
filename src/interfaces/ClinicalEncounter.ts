@@ -25,5 +25,6 @@ export interface IAICardChat {
 
 export interface IReportCard {
   patientId: number;
+  patient?: Patient;
   onClose: () => void;
 }

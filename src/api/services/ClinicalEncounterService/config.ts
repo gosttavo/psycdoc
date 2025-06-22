@@ -5,4 +5,5 @@ export const EncounterEndpoints = {
     put: (id: number) => `/encounter/update_encounter.php/${id}`,
     delete: (id: number) => `/encounter/delete_encounter.php/${id}`,
     initEncounter: (id: number) => `/encounter/init_encounter.php/${id}`,
+    report: ()  => "/encounter/report_encounter.php"
 }

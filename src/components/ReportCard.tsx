@@ -8,13 +8,16 @@ import {
     FormLabel
 } from "@mui/material";
 import { IReportCard } from "../interfaces/ClinicalEncounter";
-import { useCreateReportEncounter } from "../hooks/useGemini";
+import { useCreateReportEncounter } from "../hooks/useClinicalEncounter";
 import { IReportEncounter } from "../interfaces/Gemini";
 import { useState } from "react";
 import { useToast } from "../contexts/ToastContext";
+import { mapGender } from "../utils/utils";
+import moment from "moment";
 
 export default function ReportCard({
     patientId,
+    patient,
     onClose
 }: IReportCard) {
     const { showToast } = useToast();
@@ -65,7 +68,13 @@ export default function ReportCard({
     return (
         <form onSubmit={handleSubmit(onSubmitEncounter)}>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Escreva apenas os sintomas do paciente, não forneça dados sensíveis (ex: nome)
+                {patient?.nameCalledBy ? patient.nameCalledBy : `${patient?.name} ${patient?.nameSecond ? patient.nameSecond : ''}`}
+            </p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {mapGender(patient?.gender ?? 0)}
+            </p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {moment(patient?.birthDate).format("DD/MM/YYYY")}
             </p>
             <div className="grid grid-cols-12 gap-4 mt-2">
                 <input
@@ -74,9 +83,6 @@ export default function ReportCard({
                     defaultValue={patientId}
                 />
                 {errors.patientId && <p>{errors.patientId.message}</p>}
-                <FormLabel htmlFor={'prompt'}>
-                    Sintomas
-                </FormLabel>
                 <FormLabel>
                     Resposta
                 </FormLabel>

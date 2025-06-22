@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useToast } from "../contexts/ToastContext";
 import { useDarkMode } from "../hooks/useDarkMode";
-import TextEditor from "../components/TextEditor";
 import Card from "../components/Card";
 import { useOpenEncounter } from "../hooks/useClinicalEncounter";
 import { useParams } from "react-router-dom";
@@ -16,8 +15,6 @@ import {
 } from "@mui/material";
 import moment from "moment";
 import { mapEncounterStatus, mapGender } from "../utils/utils";
-import { Descendant } from 'slate';
-import { useMemo } from 'react';
 
 export default function ViewEncounter() {
     const { isDarkMode } = useDarkMode();
@@ -86,31 +83,48 @@ export default function ViewEncounter() {
         }
     };
 
-    const { data, isLoading, isError } = useOpenEncounter(encounterId ? Number(encounterId) : 0);
-
-    const parsedContentHtml: Descendant[] = useMemo(() => {
-        const initialEditorValue: Descendant[] = [
-            {
-                type: 'paragraph',
-                children: [{ text: '' }],
-            }
-        ];
-
-        if (!data?.contentHtml) {
-            return initialEditorValue;
-        }
-
+    const parseRichTextContent = (content: string | undefined) => {
+        if (!content) return '';
+        
         try {
-            const parsed = JSON.parse(data.contentHtml);
+            const parsed = JSON.parse(content);
             if (Array.isArray(parsed)) {
-                return parsed as Descendant[];
+                return parsed.map((node: any) => {
+                    if (node.children) {
+                        return node.children.map((child: any) => child.text).join('');
+                    }
+                    return '';
+                }).join('\n');
             }
-        } catch (err) {
-            console.error('Erro ao fazer parse do contentHtml:', err);
+            return content;
+        } catch (e) {
+            return content;
         }
+    };
 
-        return initialEditorValue;
-    }, [data?.contentHtml]);
+    const parseGptResponse = (response: any) => {
+        if (!response) return '';
+        
+        if (Array.isArray(response)) {
+            return response.join('\n');
+        }
+        
+        if (typeof response === 'string') {
+            try {
+                const parsed = JSON.parse(response);
+                if (Array.isArray(parsed)) {
+                    return parsed.join('\n');
+                }
+                return response;
+            } catch {
+                return response;
+            }
+        }
+        
+        return '';
+    };
+
+    const { data, isLoading, isError } = useOpenEncounter(encounterId ? Number(encounterId) : 0);
 
     useEffect(() => {
         if (isLoading) {
@@ -134,15 +148,19 @@ export default function ViewEncounter() {
                 </h1>
             </div>
 
-            <div
-                className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                 <div className="col-span-2">
                     <Card customClass="h-screen">
                         <p>Prontuário</p>
-                        <TextEditor
-                            disabled={true}
-                            value={parsedContentHtml}
+                        <TextareaAutosize
+                            value={parseRichTextContent(data?.contentHtml)}
+                            style={{
+                                ...textareaStyles,
+                                backgroundColor: isDarkMode ? '#424242' : '#f5f5f5'
+                            }}
+                            disabled
+                            className="col-span-12 sm:col-span-12"
+                            readOnly
                         />
                     </Card>
                 </div>
@@ -261,7 +279,7 @@ export default function ViewEncounter() {
                                     variant="outlined"
                                     fullWidth
                                     margin="normal"
-                                    value={mapGender(data?.patient?.gender ??0)}
+                                    value={mapGender(data?.patient?.gender ?? 0)}
                                     slotProps={slotProps}
                                     size="small"
                                     className={`col-span-12 sm:col-span-6 rounded-md`}
@@ -339,11 +357,7 @@ export default function ViewEncounter() {
                         <AccordionDetails sx={{ padding: 1 }}>
                             <div className="grid grid-cols-12 gap-4">
                                 <TextareaAutosize
-                                    value={
-                                        Array.isArray(data?.gptResponse)
-                                            ? data.gptResponse.join('\n')
-                                            : (data?.gptResponse ?? '')
-                                    }
+                                    value={parseGptResponse(data?.gptResponse)}
                                     style={{
                                         ...textareaStyles,
                                         backgroundColor: isDarkMode ? '#424242' : '#f5f5f5'
