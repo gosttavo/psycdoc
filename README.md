@@ -1,54 +1,59 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 🧠 PsycDoc
 
-Currently, two official plugins are available:
+**PsycDoc** é um sistema de Prontuário Eletrônico desenvolvido como projeto integrador na área de Inteligência Artificial. O objetivo é oferecer uma solução digital para gestão de pacientes em clínicas, com centralização de informações, integração com IA e acessibilidade multiplataforma.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🎯 Objetivo
 
-## Expanding the ESLint configuration
+- Centralizar os dados dos pacientes de forma segura e acessível via navegador ou dispositivos móveis.
+- Facilitar o atendimento remoto ou presencial por meio de um painel intuitivo.
+- Reduzir o uso de planilhas manuais e riscos de perda de dados.
+- Gerar relatórios estruturados sobre os prontuários.
+- Utilizar IA para prever riscos e sugerir tratamentos (integração com Gemini IA).
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🧩 Funcionalidades
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- 📋 **Cadastro e Gerenciamento de Pacientes**
+- 🗂️ **Armazenamento e Consulta de Prontuários**
+- 📈 **Geração de Relatórios**
+- 🤖 **Integração com Inteligência Artificial (Gemini IA)** para análise e apoio clínico
+- 🌐 **Acesso Web e Mobile-friendly**
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Tecnologias Utilizadas
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- [React JS](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Material UI (MUI)](https://mui.com/)
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## 🚀 Como executar o projeto
+
+### Pré-requisitos
+
+- Node.js e npm
+
+### Instalação
+
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/gosttavo/psycdoc.git
+   ```
+
+2. Instale as dependências do front-end:
+   ```bash
+   cd psycdoc/frontend
+   npm install
+   ```
+
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+4. Configure o back-end (PHP) com um servidor local (como XAMPP ou Laragon), apontando para o diretório `psycdoc/backend`. [Link para o repositório do back-end.](https://github.com/Freitas86/psycdoc)
+
+> **Nota:** Certifique-se de atualizar os arquivos de configuração com as credenciais corretas do banco de dados.
+
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
